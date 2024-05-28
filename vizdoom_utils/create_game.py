@@ -1,13 +1,13 @@
 import vizdoom as vzd
 
-def create_game(config_path: str, color: bool=False, depth: bool=True, label: bool=False, 
+def create_game(config_path: str, color: bool|str=False, depth: bool=False, label: bool=False, 
                 automap: bool=False, res: tuple[int, int]=(256, 144), visibility: bool=False, *args, **kwargs) -> vzd.vizdoom.DoomGame:
     """Creates a vizdoom game instance with configurable options
 
     Args:
         config_path (str): scenario configuration path
-        color (bool, optional): color (CRCGCB) or grayscale (GRAY8). Defaults to False.
-        depth (bool, optional): depth buffer availability. Defaults to True.
+        color (bool|str, optional): color (RGB24) or grayscale (GRAY8). Defaults to False.
+        depth (bool, optional): depth buffer availability. Defaults to False.
         label (bool, optional): labels buffer availability. Defaults to False.
         automap (bool, optional): automap buffer availability. Defaults to False.
         res (tuple[int, int], optional): internal rendering resolution. Defaults to (256, 144).
@@ -17,7 +17,6 @@ def create_game(config_path: str, color: bool=False, depth: bool=True, label: bo
     Returns:
         vzd.vizdoom.DoomGame: _description_
     """    
-    
     
     # create an instance of doom game
     print("Initializing Doom... ", end='')
@@ -38,20 +37,21 @@ def create_game(config_path: str, color: bool=False, depth: bool=True, label: bo
     
     # set rendering options
     exec(f"game.set_screen_resolution(vzd.ScreenResolution.RES_{res[0]:d}X{res[1]:d})")
-    exec(f"game.set_screen_format(vzd.ScreenFormat.{'CRCGCB' if color else 'GRAY8'})")
+    if isinstance(color, bool):
+        exec(f"game.set_screen_format(vzd.ScreenFormat.{'RGB24' if color else 'GRAY8'})")
+    else:
+        exec(f"game.set_screen_format(vzd.ScreenFormat.{color})")
     game.set_window_visible(visibility)
     
-    # no need to set buffer access if human is playing
-    if "spec" not in kwargs:
-        # set "cheating" buffer access
-        game.set_depth_buffer_enabled(depth)
-        game.set_labels_buffer_enabled(label)
-        game.set_automap_buffer_enabled(automap)
-        if "automap_config" in kwargs:
-            config = kwargs["automap_config"]
-            game.set_automap_mode(config["mode"])
-            game.set_automap_rotate(config["rotate"])
-            game.set_automap_render_textures(config["texture"])
+    # set "cheating" buffer access
+    game.set_depth_buffer_enabled(depth)
+    game.set_labels_buffer_enabled(label)
+    game.set_automap_buffer_enabled(automap)
+    if "automap_config" in kwargs:
+        config = kwargs["automap_config"]
+        game.set_automap_mode(config["mode"])
+        game.set_automap_rotate(config["rotate"])
+        game.set_automap_render_textures(config["texture"])
     
     # finished initializing the game
     game.init()

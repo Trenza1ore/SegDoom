@@ -21,7 +21,7 @@ class ReplayMemory:
         self.ch_num = ch_num
         self.history_len = history_len
         self.dtype = {
-            "frame"     : (dtypes[0], (size, ch_num, *res)),
+            "frame"     : (dtypes[0], (size, *res, ch_num)),
             "reward"    : (dtypes[1], (size, ))
         }
         
@@ -49,7 +49,7 @@ class ReplayMemory:
         else:
             self.indices = np.arange(size, dtype=np.uint64)
         
-        self.frames = np.zeros((size, ch_num, *res), dtype=dtypes[0])
+        self.frames = np.zeros((size, *res, ch_num), dtype=dtypes[0])
         self.rewards = np.zeros(size, dtype=dtypes[1])
         self.actions = np.zeros(size, dtype=np.uint8)
         
@@ -68,7 +68,7 @@ class ReplayMemory:
     
     # add is replaced by add_filled after the memory has been filled once
     def add(self, frame: np.ndarray[np.integer], reward: np.floating, action: np.uint8,
-            features: tuple):
+            features: tuple=None):
         """Add a single state into memory
         """        
         if self.__ptr < self.max_index:
@@ -81,7 +81,8 @@ class ReplayMemory:
         self.frames[self.__ptr, :, :, :] = frame
         self.rewards[self.__ptr] = reward
         self.actions[self.__ptr] = action
-        self.features[self.__ptr, :] = features
+        if features:
+            self.features[self.__ptr, :] = features
     
     def add_filled(self, frame: np.ndarray[np.integer], reward: np.floating, action: np.uint8,
             features: tuple):
@@ -91,7 +92,8 @@ class ReplayMemory:
         self.frames[self.__ptr, :, :, :] = frame
         self.rewards[self.__ptr] = reward
         self.actions[self.__ptr] = action
-        self.features[self.__ptr, :] = features
+        if features:
+            self.features[self.__ptr, :] = features
 
     # replay_p is replaced by replay_p_filled after the memory has been filled once
     def replay_p(self, n: int, r: bool=True, scores=0) -> np.ndarray[np.unsignedinteger]:
