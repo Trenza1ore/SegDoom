@@ -21,20 +21,25 @@ class ReplayMemory:
         self.ch_num = ch_num
         self.history_len = history_len
         self.dtype = {
-            "frame"     : (dtypes[0], (size, *res, ch_num)),
+            "frame"     : (dtypes[0], (size, ch_num, *res)),
             "reward"    : (dtypes[1], (size, ))
         }
         
         if len(dtypes) > 2:
             self.dtype["features"] = (*dtypes[2:], )
             self.feature_num = len(self.dtype["features"])
+            self.use_features = True
             if len(set(self.dtype["features"])) == 1:
                 self.features = np.zeros((size, self.feature_num), dtype=self.dtype['features'][0])
             else:
-                for i in range(self.feature_num):
-                    exec(f"self.feature_{i} = np.zeros(size, dtype={self.dtype['features'][i]})")
+                self.features = np.zeros(size, dtype=[(str(i), self.dtype['features'][i]) for i in range(self.feature_num)])
+                # for i in range(self.feature_num):
+                #     print(f"EXEC: self.feature_{i} = np.zeros(size, dtype={self.dtype['features'][i]})")
+                #     self.features.append(eval(f"self.feature_{i}"))
+                #     exec(f"self.feature_{i} = np.zeros(size, dtype={self.dtype['features'][i]})")
         else:
             self.feature_num = 0
+            self.use_features = False
         
         # No navigation model
         if not nav:
@@ -49,16 +54,16 @@ class ReplayMemory:
         else:
             self.indices = np.arange(size, dtype=np.uint64)
         
-        self.frames = np.zeros((size, *res, ch_num), dtype=dtypes[0])
+        self.frames = np.zeros((size, ch_num, *res), dtype=dtypes[0])
         self.rewards = np.zeros(size, dtype=dtypes[1])
         self.actions = np.zeros(size, dtype=np.uint8)
         
-        self.__ptr = -1
+        self._ptr = -1
         self.rng = default_rng()
     
     # functions for ease of checking
     def __len__(self) -> int:
-        return self.__ptr + 1
+        return self._ptr + 1
     
     def __str__(self) -> str:
         return f"ReplayMemory(f:{self.dtype['frame']}, r:{self.dtype['reward']})"
@@ -71,29 +76,29 @@ class ReplayMemory:
             features: tuple=None):
         """Add a single state into memory
         """        
-        if self.__ptr < self.max_index:
-            self.__ptr += 1
+        if self._ptr < self.max_index:
+            self._ptr += 1
         else:
-            self.__ptr = 0
+            self._ptr = 0
             self.add = self.add_filled
             self.replay_p = self.replay_p_filled
             self.replay_p_nav = self.replay_p_nav_filled
-        self.frames[self.__ptr, :, :, :] = frame
-        self.rewards[self.__ptr] = reward
-        self.actions[self.__ptr] = action
-        if features:
-            self.features[self.__ptr, :] = features
+        self.frames[self._ptr, :, :, :] = frame.transpose(2,0,1)
+        self.rewards[self._ptr] = reward
+        self.actions[self._ptr] = action
+        if self.use_features:
+            self.features[self._ptr] = features
     
     def add_filled(self, frame: np.ndarray[np.integer], reward: np.floating, action: np.uint8,
             features: tuple):
         """Add a single state into memory
         """        
-        self.__ptr = self.__ptr + 1 if self.__ptr < self.max_index else 0
-        self.frames[self.__ptr, :, :, :] = frame
-        self.rewards[self.__ptr] = reward
-        self.actions[self.__ptr] = action
-        if features:
-            self.features[self.__ptr, :] = features
+        self._ptr = self._ptr + 1 if self._ptr < self.max_index else 0
+        self.frames[self._ptr, :, :, :] = frame.transpose(2,0,1)
+        self.rewards[self._ptr] = reward
+        self.actions[self._ptr] = action
+        if self.use_features:
+            self.features[self._ptr] = features
 
     # replay_p is replaced by replay_p_filled after the memory has been filled once
     def replay_p(self, n: int, r: bool=True, scores=0) -> np.ndarray[np.unsignedinteger]:
@@ -105,13 +110,13 @@ class ReplayMemory:
             # Since negative rewards exist
             scores = scores - np.min(scores)
             scores[:self.history_len] = 0
-            scores[self.__ptr:] = 0
+            scores[self._ptr:] = 0
             scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
         
         # re-roll because selection contains invalid states for training
         # (navigation and combat states mixed together)
-        if np.any(self.features[indices, 0] != self.features[indices+1, 0]):
+        if np.any(self.features['0'][indices] != self.features['0'][indices+1]):
             return self.replay_p(n, r, scores)
         return indices
     
@@ -124,14 +129,14 @@ class ReplayMemory:
             # Since negative rewards exist
             scores = scores - np.min(scores)
             scores[:self.history_len] = 0
-            scores[self.__ptr:self.__ptr+self.history_len+1] = 0
+            scores[self._ptr:self._ptr+self.history_len+1] = 0
             scores[-1] = 0
             scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
         
         # re-roll because selection contains invalid states for training
         # (navigation and combat states mixed together)
-        if np.any(self.features[indices, 0] != self.features[indices+1, 0]):
+        if np.any(self.features['0'][indices] != self.features['0'][indices+1]):
             return self.replay_p(n, r, scores)
         return indices
     
@@ -144,7 +149,7 @@ class ReplayMemory:
         # Since negative rewards exist
         scores = scores - np.min(scores)
         scores[:self.history_len] = 0
-        scores[self.__ptr:] = 0
+        scores[self._ptr:] = 0
         scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
         return indices
@@ -157,7 +162,7 @@ class ReplayMemory:
         # Since negative rewards exist
         scores = scores - np.min(scores)
         scores[:self.history_len] = 0
-        scores[self.__ptr:self.__ptr+self.history_len+1] = 0
+        scores[self._ptr:self._ptr+self.history_len+1] = 0
         scores[-1] = 0
         scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
@@ -173,7 +178,7 @@ class ReplayMemory:
         scores = scores - np.min(scores)
         scores[self.features[:, 0]] = 0
         scores[:self.history_len] = 0
-        scores[self.__ptr:] = 0
+        scores[self._ptr:] = 0
         scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
         return indices
@@ -187,7 +192,7 @@ class ReplayMemory:
         scores = scores - np.min(scores)
         scores[self.features[:, 0]] = 0
         scores[:self.history_len] = 0
-        scores[self.__ptr:self.__ptr+self.history_len+1] = 0
+        scores[self._ptr:self._ptr+self.history_len+1] = 0
         scores[-1] = 0
         scores /= np.sum(scores)
         indices = self.rng.choice(self.indices, size=n, replace=r, p=scores)
