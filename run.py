@@ -120,7 +120,7 @@ tasks = [
     
 ][task_idx:task_idx+1]
 
-tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
+# tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
 
 def check_gpu() -> torch.device:
     """Checks the system to see if CUDA devices are available.
@@ -233,7 +233,7 @@ def main():
                 IQN_policy_kwargs.update(policy_kwargs)
 
                 # optimize_memory_usage unsupported for IQN
-                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=409_600,
+                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=204800,
                             # replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(goal_selection_strategy="episode"), 
                             train_freq=(4096, "step"), gradient_steps=3, batch_size=32, target_update_interval=4096,
                             optimize_memory_usage=False, policy_kwargs=IQN_policy_kwargs, seed=seed, exploration_initial_eps=1,
@@ -243,7 +243,7 @@ def main():
 
                 if isinstance(warmup_model, str) and os.path.exists(warmup_model):
                     assert warmup_n_envs % n_envs == 0, f"warmup_n_envs ({warmup_n_envs}) incompatible with n_envs ({n_envs})"
-                    
+
                     env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
                     ppo_for_warmup = PPO.load(warmup_model)
                     env_iter = list(range(warmup_n_envs))
