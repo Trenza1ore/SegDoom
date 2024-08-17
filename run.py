@@ -2,6 +2,7 @@ import os
 import itertools as it
 from time import sleep, time
 
+from tqdm.rich import tqdm
 import vizdoom as vzd
 import torch
 import torch.nn as nn
@@ -65,6 +66,7 @@ task_idx = 0
 save_validation = False
 use_recurrency = True
 global_framestack = True
+warmup_episodes = 100
 frame_repeat = 4
 
 input_rep_ch_num = {
@@ -78,41 +80,41 @@ input_rep_ch_num = {
 # framestack: -1 = global behavior, 0 = Off, 1 = On
 tasks = [
     # 1-3 (PPO for lr=3e-4)
-    (deathmatch_bot, 3e-4,      1, 1, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO"),  # 1
-    (deathmatch_bot, 3e-4,      1, 1, "rgb_3e-4",       0, 4, 2050808, -1, "PPO"),  # 2
-    (deathmatch_bot, 3e-4,      1, 1, "ss_3e-4",        1, 4, 2050808, -1, "PPO"),  # 3
+    (deathmatch_bot, 3e-4,      1, 1, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO", None),    # 1
+    (deathmatch_bot, 3e-4,      1, 1, "rgb_3e-4",       0, 4, 2050808, -1, "PPO", None),    # 2
+    (deathmatch_bot, 3e-4,      1, 1, "ss_3e-4",        1, 4, 2050808, -1, "PPO", None),    # 3
 
     # 4-6 (PPO for lr=1e-4)
-    (deathmatch_bot, 1e-4,      1, 1, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO"),  # 4
-    (deathmatch_bot, 1e-4,      1, 1, "rgb_1e-4",       0, 4, 2050808, -1, "PPO"),  # 5
-    (deathmatch_bot, 1e-4,      1, 1, "ss_1e-4",        1, 4, 2050808, -1, "PPO"),  # 6
+    (deathmatch_bot, 1e-4,      1, 1, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO", None),    # 4
+    (deathmatch_bot, 1e-4,      1, 1, "rgb_1e-4",       0, 4, 2050808, -1, "PPO", None),    # 5
+    (deathmatch_bot, 1e-4,      1, 1, "ss_1e-4",        1, 4, 2050808, -1, "PPO", None),    # 6
 
     # 7-9 (PPO for lr=9e-4)
-    (deathmatch_bot, 9e-4,      1, 1, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO"),  # 7
-    (deathmatch_bot, 9e-4,      1, 1, "rgb_9e-4",       0, 4, 2050808, -1, "PPO"),  # 8
-    (deathmatch_bot, 9e-4,      1, 1, "ss_9e-4",        1, 4, 2050808, -1, "PPO"),  # 9
+    (deathmatch_bot, 9e-4,      1, 1, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO", None),    # 7
+    (deathmatch_bot, 9e-4,      1, 1, "rgb_9e-4",       0, 4, 2050808, -1, "PPO", None),    # 8
+    (deathmatch_bot, 9e-4,      1, 1, "ss_9e-4",        1, 4, 2050808, -1, "PPO", None),    # 9
 
     # 10-11 (PPO for ss, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "PPO"),  # 10
-    (deathmatch_bot, 1e-5,      1, 1, "ss_1e-5",        1, 4, 2050808, -1, "PPO"),  # 11
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "PPO", None),    # 10
+    (deathmatch_bot, 1e-5,      1, 1, "ss_1e-5",        1, 4, 2050808, -1, "PPO", None),    # 11
     
     # 12-13 (PPO for rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808, -1, "PPO"),  # 12
-    (deathmatch_bot, 1e-5,      1, 1, "rgb_1e-5",       0, 4, 2050808, -1, "PPO"),  # 13
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808, -1, "PPO", None),    # 12
+    (deathmatch_bot, 1e-5,      1, 1, "rgb_1e-5",       0, 4, 2050808, -1, "PPO", None),    # 13
 
     # 14-15 (PPO for ss+rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO"),  # 14
-    (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO"),  # 15
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None),    # 14
+    (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None),    # 15
 
     # 16-18 (IQN for lr=1e-3, with framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN"),  # 16
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN"),  # 17
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN"),  # 18
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_rgb_1e-3/best_model.zip"), # 16
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_1e-3/best_model.zip"),     # 17
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN", "logs/stack_ppo_rgb_1e-3/best_model.zip"),    # 18
     
     # 19-21 (IQN for lr=1e-3, without framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN"),  # 19
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN"),  # 20
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN"),  # 21
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN", "logs/ss_rgb_1e-3/best_model.zip"),   # 19
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip"),       # 20
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN", "logs/rgb_1e-3/best_model.zip"),      # 21
     
 ][task_idx:task_idx+1]
 
@@ -142,7 +144,7 @@ def main():
     # DEVICE = check_gpu()
 
     # ep_max (maximum training episode) would overwrite the epoch_num (number of epochs) setting
-    for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str in tasks:
+    for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, warmup_model in tasks:
         model_str = model_str.casefold()
         name = f"{model_str}_{name}"
         if model_str[:2] == "r_":
@@ -223,19 +225,47 @@ def main():
                 model_desc = ""
             case "iqn":
                 IQN_policy_kwargs = {
-                    "n_quantiles": 32,
-                    "num_cosine": 32,
+                    # "n_quantiles": 32,
+                    # "num_cosine": 32,
                 }
                 IQN_policy_kwargs.update(policy_kwargs)
-                HerReplayBuffer(goal_selection_strategy="episode")
 
+                # optimize_memory_usage unsupported for IQN
                 model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=2600, buffer_size=int(1e6),
                             replay_buffer_kwargs=dict(goal_selection_strategy="episode"), train_freq=(4096, "step"), 
                             gradient_steps=3, batch_size=32, tau=1, num_tau_samples=32, num_tau_prime_samples=64, 
                             optimize_memory_usage=False, target_update_interval=4096, policy_kwargs=IQN_policy_kwargs,
-                            exploration_final_eps=0.02, exploration_fraction=0.1, seed=seed)
-                # optimize_memory_usage unsupported
-                model_desc = f"\n(buffer size: {model.buffer_size})"
+                            exploration_final_eps=0.01, exploration_fraction=0.025, seed=seed)
+
+                model_desc = f"\nbuffer size: {model.buffer_size}\nwarmup: {warmup_model}"
+
+                if isinstance(warmup_model, str) and os.path.exists(warmup_model):
+                    ppo_for_warmup = PPO.load(warmup_model)
+                    env_iter = list(range(n_envs))
+                    finished_eps_count = 0
+
+                    pbar = tqdm(total=warmup_episodes, desc=f"Warming up")
+
+                    done = np.zeros(n_envs, dtype='?')
+                    obs = env.reset()
+                    reset_jobs = []
+                    while finished_eps_count < warmup_episodes:
+                        for i in reset_jobs:
+                            obs[i] = env.remotes[i].recv()
+                        reset_jobs.clear()
+                        action, _ = ppo_for_warmup.predict(obs, deterministic=True)
+                        new_obs, reward, done, info = env.step(action)
+                        model.replay_buffer.add(obs, new_obs, action, reward, done, info)
+                        if done.any():
+                            for i in env_iter:
+                                if done[i]:
+                                    pbar.update()
+                                    finished_eps_count += 1
+                                    env.remotes[i].send(("reset", (env._seeds[i], env._options[i])))
+                                    reset_jobs.append(i)
+                        obs = new_obs
+                    env.reset()
+                    pbar.close()
         
         if n_envs == 1:
             print(f"Took {time() - t:.2f} seconds to create agent.")
