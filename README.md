@@ -1,14 +1,15 @@
-# Doom-playing AI via Deep Reinforcement Learning 
+# Doom-playing AI via Deep Reinforcement Learning with Semantic Segmentation
 
-**An Individual Final Year Project at Cardiff University (BSc)**
+**An Informatics MSc Project at University of Edinburgh**
 
 #### Functionality of scripts in project's root directory:
 - **run.py -** runs the training session
-- **playit.py -** play a scenario yourself and optionally save screenshots
-- **record_testing_example.py -** an example script for recording testing sessions of an agent into gif files (need to replace name and epoch_index with your pre-trained models)
-- **gif2mp4.bat -** a batch file that converts all gif files in current directory into mp4s utilizing ffmpeg, defaults to using h264_nvenc with bit-rate 1M (3M max) 
+- **collect.py -** collects data from evalution episodes (game frames, position, etc.)
+- **playit.py -** play a scenario yourself
+- **tba**
 ---
-
+# All deprecated information, update in progress...
+---
 Utilizing DQN, DRQN and Prioritized Experience Replay to train an agent for playing Doom. 
 Scenarios tested: 
 - **Deathmatch (modified):** a modified version of deathmatch scenario with different map layout and texture where pickups are removed and killing enemies restore health/armor/ammo
