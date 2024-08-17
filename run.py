@@ -1,4 +1,5 @@
 import os
+import gc
 import itertools as it
 from time import sleep, time
 
@@ -66,7 +67,8 @@ task_idx = 0
 save_validation = False
 use_recurrency = True
 global_framestack = True
-warmup_episodes = 100
+warmup_episodes = 200
+warmup_n_envs = 20
 frame_repeat = 4
 
 input_rep_ch_num = {
@@ -109,16 +111,16 @@ tasks = [
     # 16-18 (IQN for lr=1e-3, with framestack)
     (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_rgb_1e-3/best_model.zip"), # 16
     (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_1e-3/best_model.zip"),     # 17
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN", "logs/stack_ppo_rgb_1e-3/best_model.zip"),    # 18
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN", "logs/stack_ppo_rgb_9e-3/best_model.zip"),    # 18
     
     # 19-21 (IQN for lr=1e-3, without framestack)
     (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN", "logs/ss_rgb_1e-3/best_model.zip"),   # 19
     (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip"),       # 20
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN", "logs/rgb_1e-3/best_model.zip"),      # 21
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN", "logs/rgb_9e-3/best_model.zip"),      # 21
     
 ][task_idx:task_idx+1]
 
-# tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "PPO")]
+tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
 
 def check_gpu() -> torch.device:
     """Checks the system to see if CUDA devices are available.
@@ -231,40 +233,55 @@ def main():
                 IQN_policy_kwargs.update(policy_kwargs)
 
                 # optimize_memory_usage unsupported for IQN
-                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=2600, buffer_size=int(1e6),
-                            replay_buffer_kwargs=dict(goal_selection_strategy="episode"), train_freq=(4096, "step"), 
-                            gradient_steps=3, batch_size=32, tau=1, num_tau_samples=32, num_tau_prime_samples=64, 
-                            optimize_memory_usage=False, target_update_interval=4096, policy_kwargs=IQN_policy_kwargs,
-                            exploration_final_eps=0.01, exploration_fraction=0.025, seed=seed)
+                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=409_600,
+                            # replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(goal_selection_strategy="episode"), 
+                            train_freq=(4096, "step"), gradient_steps=3, batch_size=32, target_update_interval=4096,
+                            optimize_memory_usage=False, policy_kwargs=IQN_policy_kwargs, seed=seed, exploration_initial_eps=1,
+                            exploration_final_eps=0.01, exploration_fraction=0.025)
 
                 model_desc = f"\nbuffer size: {model.buffer_size}\nwarmup: {warmup_model}"
 
                 if isinstance(warmup_model, str) and os.path.exists(warmup_model):
+                    assert warmup_n_envs % n_envs == 0, f"warmup_n_envs ({warmup_n_envs}) incompatible with n_envs ({n_envs})"
+                    
+                    env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
                     ppo_for_warmup = PPO.load(warmup_model)
-                    env_iter = list(range(n_envs))
+                    env_iter = list(range(warmup_n_envs))
                     finished_eps_count = 0
 
-                    pbar = tqdm(total=warmup_episodes, desc=f"Warming up")
+                    pbar = tqdm(total=warmup_episodes, desc=f"Warming up ({warmup_episodes})")
 
-                    done = np.zeros(n_envs, dtype='?')
+                    done = np.zeros(warmup_n_envs, dtype='?')
                     obs = env.reset()
-                    reset_jobs = []
+                    reward_sum = 0
+                    env_total_reward = np.zeros(warmup_n_envs, dtype=np.float64)
+
+                    reshape_factor = warmup_n_envs // n_envs
+                    reshape_iter = list(range(reshape_factor))
+
                     while finished_eps_count < warmup_episodes:
-                        for i in reset_jobs:
-                            obs[i] = env.remotes[i].recv()
-                        reset_jobs.clear()
                         action, _ = ppo_for_warmup.predict(obs, deterministic=True)
                         new_obs, reward, done, info = env.step(action)
-                        model.replay_buffer.add(obs, new_obs, action, reward, done, info)
+                        env_total_reward += reward
                         if done.any():
-                            for i in env_iter:
-                                if done[i]:
-                                    pbar.update()
-                                    finished_eps_count += 1
-                                    env.remotes[i].send(("reset", (env._seeds[i], env._options[i])))
-                                    reset_jobs.append(i)
+                            reward_sum += env_total_reward[done].sum()
+                            env_total_reward[done] = 0
+                            new_finished_episodes = done.sum()
+                            finished_eps_count += new_finished_episodes
+                            pbar.update(new_finished_episodes)
+                        for i in reshape_iter:
+                            j = i * n_envs
+                            k = j + n_envs
+                            model.replay_buffer.add(obs[j:k,...], new_obs[j:k,...], action[j:k], reward[j:k], done[j:k], info[j:k])
                         obs = new_obs
-                    env.reset()
+                    model_desc = model_desc + f" (mean reward: {reward_sum / finished_eps_count:.2f})"
+                    pbar.set_description_str("Closing environments")
+                    env.close()
+                    pbar.set_description_str("Cleaning CUDA cache")
+                    torch.cuda.empty_cache()
+                    pbar.set_description_str("Garbage collection")
+                    del env, ppo_for_warmup, env_iter, obs, new_obs, reward, done, info, action
+                    gc.collect()
                     pbar.close()
         
         if n_envs == 1:
@@ -275,9 +292,9 @@ def main():
         print(msg, flush=True)
         print(model.policy, flush=True)
 
-        webhook = discord_bot(extra=name)
-        eval_callback.attach_webhook(webhook, name=name)
-        webhook.send_msg(msg)
+        # webhook = discord_bot(extra=name)
+        # eval_callback.attach_webhook(webhook, name=name)
+        # webhook.send_msg(msg)
 
         model.learn(total_timesteps=4_000_000, callback=eval_callback, progress_bar=True)
         model.save(f"./logs/{name}/final.zip")
