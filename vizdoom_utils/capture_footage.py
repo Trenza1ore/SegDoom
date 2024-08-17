@@ -13,7 +13,7 @@ from PIL import Image
 def capture(agent: object, game: vzd.vizdoom.DoomGame, repeat: int,
             action_space: list, nav_action_space: list, downsampler, 
             res: tuple[int, int]=(128, 72), episodes_to_capture: int=20, 
-            cheat: bool=False):
+            cheat: bool=False, reward_tracker=None):
     """Captures testing footage for RL agent and save into gif files.
     It would create a folder in root directory of doombot named after the agent.
 
@@ -48,8 +48,10 @@ def capture(agent: object, game: vzd.vizdoom.DoomGame, repeat: int,
     for i in trange(episodes_to_capture):
         terminated = False
         game.new_episode()
+        reward_tracker.reset_last_vars()
         frames = []
-        state, frame_lr = get_frame(game, downsampler, res, frames)
+        state = get_frame(game, downsampler, res, frames)
+        frame_lr = downsampler(state)
         while not terminated:
             if cheat:
                 is_combat = check_for_enemies(state)
@@ -60,9 +62,12 @@ def capture(agent: object, game: vzd.vizdoom.DoomGame, repeat: int,
             for _ in repeat_iterator:
                 game.make_action(action)
                 if terminated := game.is_episode_finished():
-                    reward = game.get_total_reward()
+                    reward_tracker.update()
+                    reward = game.get_total_reward() + reward_tracker.total_reward
                     break
-                state, frame_lr = get_frame(game, downsampler, res, frames)
+                reward_tracker.update()
+                state = get_frame(game, downsampler, res, frames)
+                frame_lr = downsampler(state)
         duration = 1000 / 35
         frames[0].save(f"{name}/{int(reward)}_{i:02d}.gif", save_all = True, 
                        append_images=frames[1:], optimize=True, duration=duration)
@@ -70,7 +75,7 @@ def capture(agent: object, game: vzd.vizdoom.DoomGame, repeat: int,
     # also save a cheat verion
     if not cheat:
         capture(agent, game, repeat, action_space, nav_action_space, downsampler, 
-                res, episodes_to_capture, cheat=True)
+                res, episodes_to_capture, cheat=True, reward_tracker=reward_tracker)
 
 def get_frame(game: vzd.vizdoom.DoomGame, downsampler, res: tuple, 
               frames: list) -> np.ndarray:
@@ -87,9 +92,8 @@ def get_frame(game: vzd.vizdoom.DoomGame, downsampler, res: tuple,
     """    
     state = game.get_state()
     frame = state.screen_buffer
-    frame_lr = downsampler(frame, res)
-    frames.append(Image.fromarray(frame.transpose(1,2,0)))
-    return (state, frame_lr)
+    frames.append(Image.fromarray(frame))
+    return state
 
 def check_for_enemies(state) -> bool:
     """Check for the presence of enemies in current frame
