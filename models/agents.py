@@ -27,7 +27,7 @@ class CombatAgent:
                  act_wd: float=0, nav_wd: float=0, optimizer=optim.SGD, 
                  state_len: int=10, act_model=DRQNv2, nav_model=DQNv1,
                  eps: float=1, eps_decay: float=0.99, eps_min: float=0.1,
-                 nav_req_feature: bool=False, name: str='', seed=int(time())):
+                 nav_req_feature: bool=False, ch_num: int=3, name: str='', seed=int(time())):
         
         # store model hyper parameters
         self.device = device
@@ -42,6 +42,7 @@ class CombatAgent:
         self.eps_decay = eps_decay
         self.eps_min = eps_min
         self.name = name
+        self.ch_num = ch_num
         
         # set up random number generator
         self.rng = default_rng(seed)
@@ -51,14 +52,14 @@ class CombatAgent:
         
         # set up models
         self.criterion = loss()
-        self.act_net = act_model(action_num=action_num, feature_num=1, dropout=dropout).to(device)
+        self.act_net = torch.jit.script(act_model(action_num=action_num, feature_num=1, dropout=dropout, ch_num=ch_num).to(device))
         self.act_net.train()
         if nav_model == None:
             self.no_nav = True
             self.train = self.train_no_nav
         else:
             self.no_nav = False
-            self.nav_net = nav_model(action_num=nav_action_num, dropout=dropout).to(device)
+            self.nav_net = torch.jit.script(nav_model(action_num=nav_action_num, dropout=dropout, ch_num=ch_num).to(device))
             self.nav_net.train()
         
         # set up optimizer (a dict type lr means PPO is used) (PPO support has been dropped)
@@ -74,13 +75,13 @@ class CombatAgent:
                                         lr=lr, weight_decay=nav_wd)
         
         # set up memory for priorotized experience replay
-        dtypes = [np.uint8, np.float16, 'bool', 'bool']
-        dtypes.append('bool') if nav_req_feature else None
-        self.memory = ReplayMemory(res=(72, 128), ch_num=3, size=mem_size, 
+        dtypes = [np.uint8, np.float16, '?', '?', 'f2', 'f2', 'f2']
+        # dtypes.append('bool') if nav_req_feature else None
+        self.memory = ReplayMemory(res=(144, 256), ch_num=ch_num, size=mem_size, 
                                    history_len=state_len-2, dtypes=dtypes)
     
     def decide_move(self, state: np.ndarray, is_combat: bool) -> torch.tensor:
-        state = torch.from_numpy(state).float().cuda()
+        state = torch.from_numpy(state.transpose(2,0,1)).float().cuda()
         if self.rng.uniform() < self.eps:
             return self.rng.integers(0, self.action_num) if is_combat else self.rng.integers(0, self.nav_action_num)
         else:
@@ -91,7 +92,7 @@ class CombatAgent:
                 return torch.argmax(self.nav_net(state)).item()
 
     def decide_move_blind(self, state: np.ndarray) -> tuple[torch.tensor, bool]:
-        state = torch.from_numpy(state).float().cuda()
+        state = torch.from_numpy(state.transpose(2,0,1)).float().cuda()
         if self.act_net.inf_feature(state) > 0.5:
             return (torch.argmax(self.act_net.inf_action()).item(), True)
         else:
@@ -161,16 +162,15 @@ class CombatAgent:
         del current
         torch.cuda.empty_cache()
     
-    def train(self, batch_size: int=5, feature_loss_factor: float=10.):
+    def train(self, batch_size: int=1, feature_loss_factor: float=0.1):
         indices = self.memory.replay_p(batch_size)
         for i in indices:
             start, end  = i-self.history_len, i+2
             frames      = self.memory.frames[start:end, :, :, :]
             rewards     = self.memory.rewards[start:end]
             actions     = self.memory.actions[start:end]
-            is_combat   = self.memory.features[start:end, 0]
-            ongoing_mask= ~self.memory.features[start:end, 1]
-            
+            is_combat   = self.memory.features['0'][start:end]
+            ongoing_mask= ~self.memory.features['1'][start:end]
             for s_start in range(0, self.padding_len):
                 # We are updating the state (s_end-1) here
                 # s_start to s_end-2 are the observation history
@@ -204,11 +204,20 @@ class CombatAgent:
                 else:
                     model = self.nav_net
                     optimizer = self.nav_optimizer
+                    model2 = self.act_net
+                    feature = is_combat.copy()
                 
                     # Predict game features and action values for the next state
                     with torch.no_grad():
                         next_state = torch.from_numpy(frames[s_end, :, :, :]).float().cuda()
                         pred_action = torch.max(model(next_state)).item()
+                    
+                    next_state2 = torch.from_numpy(frames[s_start+1:s_end+1, :, :, :]).float().cuda()
+                    pred_feature = model2.inf_feature(next_state2)[:, 0]
+                    
+                    # Calculate loss for game features
+                    true_feature = torch.from_numpy(feature[s_start+1:s_end+1]).float().cuda()
+                    game_feature_loss = self.criterion(true_feature, pred_feature) * feature_loss_factor
                 
                 # q-target = reward + discount * max_(a')(q(s',a'))
                 q_target = torch.tensor(
@@ -219,16 +228,21 @@ class CombatAgent:
                 if is_combat_state:
                     model.inf_feature(torch.from_numpy(frames[s_start:s_end, :, :, :]).float().cuda())
                     pred_action = model.inf_action()[-1, current_action]
+                    loss = self.criterion(q_target, pred_action)+game_feature_loss
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
                 else:
                     pred_action = model(torch.from_numpy(frames[current, :, :, :]).float().cuda())[0, current_action]
+                    loss = self.criterion(q_target, pred_action)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+
+                    self.act_optimizer.zero_grad()
+                    game_feature_loss.backward()
+                    self.act_optimizer.step()
                 
-                # Calculate loss for action values
-                loss = self.criterion(q_target, pred_action)+game_feature_loss \
-                    if is_combat_state else self.criterion(q_target, pred_action)
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
         self.eps = self.eps * self.eps_decay if self.eps > self.eps_min else self.eps_min
     
     def nav_train(self, batch_size: int=5):
@@ -238,8 +252,8 @@ class CombatAgent:
             frames      = self.memory.frames[start:end, :, :, :]
             rewards     = self.memory.rewards[start:end]
             actions     = self.memory.actions[start:end]
-            is_combat   = self.memory.features[start:end, 0]
-            ongoing_mask= ~self.memory.features[start:end, 1]
+            is_combat   = self.memory.features['0'][start:end]
+            ongoing_mask= ~self.memory.features['1'][start:end]
             
             for s_start in range(0, self.padding_len):
                 # We are updating the state (s_end-1) here
@@ -257,6 +271,7 @@ class CombatAgent:
                 
                 model = self.nav_net
                 optimizer = self.nav_optimizer
+
             
                 # Predict game features and action values for the next state
                 with torch.no_grad():
