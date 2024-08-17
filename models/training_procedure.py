@@ -15,6 +15,24 @@ from vizdoom_utils import *
 # Helper functions for running training sessions for an RL agent
 # ====================================================================================
 
+class EvalCallbackWithWebhook(EvalCallback):
+    def __init__(self, eval_env: Env | VecEnv, callback_on_new_best: BaseCallback | None = None, callback_after_eval: BaseCallback | None = None, n_eval_episodes: int = 5, eval_freq: int = 10000, log_path: str | None = None, best_model_save_path: str | None = None, deterministic: bool = True, render: bool = False, verbose: int = 1, warn: bool = True):
+        super().__init__(eval_env, callback_on_new_best, callback_after_eval, n_eval_episodes, eval_freq, log_path, best_model_save_path, deterministic, render, verbose, warn)
+        self.webhook = None
+    def attach_webhook(self, bot: discord_bot, name: str):
+        if isinstance(bot, discord_bot):
+            self.webhook = bot
+            self.name = name
+            self.counter = 1
+            print("Webhook attached successfully!", flush=True)
+    def _on_step(self) -> bool:
+        continue_training = super()._on_step()
+        if self.n_calls % self.eval_freq == 0 and self.webhook is not None:
+            exp_rate_str = f"|exp:{self.model.exploration_rate:.05f}" if "iqn" in self.name else ''
+            self.webhook.send_msg(f"**{self.name}** [{self.counter:04d}{exp_rate_str}]: {self.last_mean_reward:.2f} (best:{self.best_mean_reward:.2f})")
+            self.counter += 1
+        return continue_training
+
 class inf_ep_max:
     """a class created to represent max value as Python 3's int has no such thing
     """
