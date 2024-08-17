@@ -5,4 +5,5 @@ from models import legacy
 from models.replay_memory import *
 from models.agents import *
 from models.DQN import *
-from models import training_procedure
+from models.feat_extract import *
+# from models import training_procedure
