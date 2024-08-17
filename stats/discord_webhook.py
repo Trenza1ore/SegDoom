@@ -4,6 +4,9 @@ import requests
 import traceback
 from functools import partial
 
+import PIL
+import PIL.Image
+import numpy as np
 from base64 import b64encode
 
 # load config
@@ -11,11 +14,11 @@ try:
     with open("webhook.config", 'r', encoding="utf-8") as f:
         WEBHOOK_URL = f.readline().strip()
         IMGBB_KEY = f.readline().strip()
-    print("Successfully loaded webhook and imgbb api")
+    # print("Successfully loaded webhook and imgbb api")
 except:
     WEBHOOK_URL = "***REMOVED***"
     IMGBB_KEY = "***REMOVED***"
-print(f"Loaded API:\nDiscord Webhook: {WEBHOOK_URL}\nImgBB: {IMGBB_KEY}")
+# print(f"Loaded API:\nDiscord Webhook: {WEBHOOK_URL}\nImgBB: {IMGBB_KEY}")
 
 if not os.path.exists("history"):
     os.mkdir("history")
@@ -39,13 +42,14 @@ class discord_bot:
         self.data = {}
         self.epoch = -1
         self.path = "history/" + current_time
+        self.send_msg = self.send_string
         os.mkdir(self.path)
         with open(self.path+'/'+extra, 'w') as f:
             f.write(current_time)
         self.send_string("**New Run: ** " + current_time + " " + extra)
     
     def update_data_img(self, epoch_num: int):
-        content = f"Epoch {epoch_num+1}"
+        content = f"Epoch {epoch_num+1}" if isinstance(epoch_num, int) else epoch_num
         self.data = {
             "content" : content,
             "username" : "Doom Guy",
@@ -54,6 +58,11 @@ class discord_bot:
                 "type" : "rich"
                 } for img in self.last_upload]
         }
+
+    def save_img(self, img: np.ndarray):
+        if not PIL.Image.isImageType(img):
+            img = PIL.Image.fromarray(img)
+        img.save(f"{self.path}/current.png")
 
     def send_img(self, epoch_num: int):
         self.last_upload = []
