@@ -7,7 +7,7 @@ import os
 
 from numpy.random import default_rng
 
-from models.DQN import DQNv1, DRQNv2
+from models.MyDQN import DQNv1, DRQNv2
 from models.replay_memory import ReplayMemory
 from vizdoom_utils import *
 from time import time
