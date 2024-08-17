@@ -151,19 +151,41 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+
 doc/
 reference/
 history&backup/
 plots/
 history/
+
+.vs/
+
 doom.wad
 doom.wad.bak
 _vizdoom.ini
-*.npy
+
+# Saved data
+*.pt
 *.pth
-*.ipynb
-test.py
+*.npy
+*.npz
 *.zip
+*.pkl
+
+# For testing
+*.ipynb
+test*.py
+
+# Recorded media
 *.gif
 *.png
+*.mp4
+*.html
+
+# Temporary files, equivalent to (?:(?:run)|(?:plt)|(?:collect))[0-9]+.(?:(?:py)|(?:bat))
+run?*.[bp][ay]*
+plt?*.[bp][ay]*
+collect?*.[bp][ay]*
+
+logs/
 webhook.config
