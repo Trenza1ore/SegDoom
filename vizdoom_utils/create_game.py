@@ -23,17 +23,27 @@ def create_game(config_path: str, color: bool|str=False, depth: bool=False, labe
     game = vzd.DoomGame()
     
     # remove named arguments set to boolean False or anything representing that
+    to_remove = []
     for key, value in kwargs.items():
         if not value:
-            del kwargs[key]
+            to_remove.append(key)
+    for key in to_remove:
+        del kwargs[key]
     
     # load scenario's default configuration
     game.load_config(config_path)
     
     # set game to sync/async player mode or async spectator mode
-    game.set_mode(vzd.Mode.PLAYER) if "asyn" not in kwargs else \
-        (game.set_mode(vzd.Mode.ASYNC_PLAYER) if "spec" not in kwargs else \
-            game.set_mode(vzd.Mode.ASYNC_SPECTATOR))
+    asyn_mode = "asyn" in kwargs
+    spec_mode = "spec" in kwargs
+    if asyn_mode and spec_mode:
+        game.set_mode(vzd.Mode.ASYNC_SPECTATOR)
+    elif asyn_mode:
+        game.set_mode(vzd.Mode.ASYNC_PLAYER)
+    elif spec_mode:
+        game.set_mode(vzd.Mode.SPECTATOR)
+    else:
+        game.set_mode(vzd.Mode.PLAYER)
     
     # set rendering options
     exec(f"game.set_screen_resolution(vzd.ScreenResolution.RES_{res[0]:d}X{res[1]:d})")
@@ -53,6 +63,8 @@ def create_game(config_path: str, color: bool|str=False, depth: bool=False, labe
         game.set_automap_rotate(config["rotate"])
         game.set_automap_render_textures(config["texture"])
     
+    if "add_args" in kwargs and bool(kwargs["add_args"]):
+        game.add_game_args(kwargs["add_args"])
     # finished initializing the game
     game.init()
     print("done")
