@@ -175,7 +175,7 @@ TEXTMAP*.txt
 *.pkl
 
 # For testing
-*.ipynb
+test*.ipynb
 test*.py
 
 # Recorded media
