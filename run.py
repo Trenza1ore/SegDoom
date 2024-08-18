@@ -69,7 +69,7 @@ bot_args_eval = " ".join([
 task_idx = 0
 save_validation = False
 use_recurrency = True
-global_framestack = False
+global_framestack = 0
 global_warmup_episodes = 200
 warmup_n_envs = 40
 frame_repeat = 4
@@ -98,6 +98,8 @@ iqn_3 = dict(
     gradient_steps          = 1,
     target_update_interval  = 2048,
 )
+
+rppo = dict(env_config={"n_updates" : 1})
 
 # config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
 # framestack: -1 = global behavior, 0 = Off, 1 = On
@@ -130,11 +132,11 @@ tasks = [
     (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None, {}),    # 15
 
     # 16-18 (IQN for lr=1e-3, with framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN",               # 16
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  4, "IQN",               # 16
      "logs/stack_ppo_ss_rgb_1e-3/best_model.zip", iqn_1), 
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN",               # 17
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  4, "IQN",               # 17
      "logs/stack_ppo_ss_1e-3/best_model.zip", iqn_1),     # 17
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN",               # 18
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  4, "IQN",               # 18
      "logs/stack_ppo_rgb_9e-3/best_model.zip", iqn_1),    # 18
     
     # 19-21 (IQN for lr=1e-3, without framestack) 4096 train_freq, 3 grad steps, 4096 target update freq
@@ -154,30 +156,12 @@ tasks = [
      "logs/ss_rgb_1e-3/best_model.zip", {}),
     
     # 24-25 (Recurrent PPO for ss+rgb and ss, lr=1e-3)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "R_PPO", None, {}),  # 24
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "R_PPO", None, {}),  # 25
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  2, "R_PPO", None, rppo),# 24
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  8, "R_PPO", None, rppo),# 25
     
 ][task_idx:task_idx+1]
 
 # tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
-
-def check_gpu() -> torch.device:
-    """Checks the system to see if CUDA devices are available.
-    Warning:
-    cudnn.benchmark hurts performance if convolutional layers receives varying input shape
-
-    Returns:
-        torch.device: device for running PyTorch with
-    """    
-    # Uses GPU if available
-    if torch.cuda.is_available():
-        DEVICE = torch.device("cuda")
-        torch.backends.cudnn.benchmark = True
-        print("\nCUDA device detected.")
-    else:
-        DEVICE = torch.device("cpu")
-        print("\nNo CUDA device detected.")
-    return DEVICE
 
 def main():
     global tasks
@@ -188,13 +172,12 @@ def main():
     for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, warmup_model, model_config in tasks:
         model_str = model_str.casefold()
         name = f"{model_str}_{name}"
-        if model_str[:2] == "r_":
-            framestack = 0
+
         if framestack < 0:
             framestack = global_framestack
         ch_num = input_rep_ch_num[input_rep]
         if framestack:
-            ch_num *= frame_repeat
+            ch_num *= framestack
         game_config = dict(config_path=config, color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
 
         game = create_game(**game_config)
@@ -210,6 +193,7 @@ def main():
 
         env_kwargs = {
             "frame_stack"   : bool(framestack),
+            "buffer_size"   : int(framestack),
             "realtime_ss"   : "rtss" in name,
             "actions"       : act_actions, 
             "input_shape"   : (ch_num, 144, 256), 
@@ -218,6 +202,10 @@ def main():
             "seed"          : seed,
             "input_rep"     : input_rep
         }
+
+        if "env_config" in model_config:
+            env_kwargs.update(model_config["env_config"])
+            del model_config["env_config"]
 
         policy_kwargs = {
             "normalize_images"          : True,
@@ -236,10 +224,13 @@ def main():
         eval_game_config["add_args"] = bot_args_eval
         eval_env_kwargs["is_eval"] = True
         eval_env_kwargs["game_config"] = eval_game_config
-        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=20, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
+        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=n_envs, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
 
         if framestack:
-            name = f"stack_{name}"
+            if "r_" in model_str:
+                name = f"r{framestack}_{name}"
+            else:
+                name = f"s{framestack}_{name}"
 
         eval_callback =  EvalCallbackWithWebhook(
             eval_env,
@@ -268,12 +259,12 @@ def main():
                 model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, batch_size=32, 
                             n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
                 if psutil is not None:
-                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9} GB"
+                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "r_ppo":
                 model = RecurrentPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, 
                                      batch_size=32, n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
                 if psutil is not None:
-                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9} GB"
+                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "iqn":
                 IQN_policy_kwargs = {
                     # "n_quantiles": 32,
@@ -282,7 +273,6 @@ def main():
                 }
                 IQN_policy_kwargs.update(policy_kwargs)
 
-                
                 try:
                     import psutil
                     mem_available = psutil.virtual_memory().available / 1e9
@@ -372,10 +362,11 @@ def main():
         if n_envs == 1:
             print(f"Took {time() - t:.2f} seconds to create agent.")
         
-        print(f"Number of available buttons: {n} | Size of action space: {len(act_actions)}")
-        msg = f"Model: {model_str.upper()}, Framestack: {bool(framestack)}{model_desc}"
-        print(msg, flush=True)
+        msg = f"Number of available buttons: {n} | Size of action space: {len(act_actions)} | "
+        msg += f"Input shape: {env_kwargs['input_shape']}\n"
+        msg += f"Model: {model_str.upper()}, Framestack: {bool(framestack)}{model_desc}"
         print(model.policy, flush=True)
+        print(msg, flush=True)
 
         webhook = discord_bot(extra=name)
         eval_callback.attach_webhook(webhook, name=name)
