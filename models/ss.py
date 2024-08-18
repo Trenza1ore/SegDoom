@@ -42,20 +42,26 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 res101 = mobilenetv3 = None
 
 def init_res101(checkpoint: str | dict = "./semantic_segmentation/resnet101/ss_resnet101_18.pt",
-                jit: bool = False):
+                jit: bool = False, force: bool = False, verbose: int=0):
     global res101
-    if isinstance(checkpoint, str):
-        checkpoint = torch.load(checkpoint)["model"]
-    res101 = models.deeplabv3_resnet101(weights=models.DeepLabV3_ResNet101_Weights.DEFAULT)
 
-    prev = res101.classifier[-1]
-    res101.classifier[-1] = nn.Conv2d(prev.in_channels, 13, kernel_size=prev.kernel_size, stride=prev.stride)
-    del prev
-    gc.collect()
+    if force or (not isinstance(res101, models.DeepLabV3)):
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint)["model"]
+        res101 = models.deeplabv3_resnet101(weights=models.DeepLabV3_ResNet101_Weights.DEFAULT)
 
-    res101.load_state_dict(checkpoint)
-    res101 = res101.to(device=device)
-    if jit:
-        res101 = torch.jit.script(res101)
-    res101.eval()
+        prev = res101.classifier[-1]
+        res101.classifier[-1] = nn.Conv2d(prev.in_channels, 13, kernel_size=prev.kernel_size, stride=prev.stride)
+        del prev
+        gc.collect()
+
+        res101.load_state_dict(checkpoint)
+        res101 = res101.to(device=device)
+        if jit:
+            res101 = torch.jit.script(res101)
+        res101.eval()
+
+        if verbose > 0:
+            print("Initialized one copy of res101", flush=True)
+
     return res101
