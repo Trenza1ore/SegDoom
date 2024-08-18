@@ -3,18 +3,21 @@ import gc
 import itertools as it
 from time import sleep, time
 
-from tqdm.rich import tqdm
 import vizdoom as vzd
+from tqdm.rich import tqdm
+
 import torch
 import torch.nn as nn
 from torch.optim import SGD, Adam, Adagrad
-from stable_baselines3 import PPO, HerReplayBuffer
+
+from stable_baselines3 import PPO
+from sb3_contrib import RecurrentPPO, IQN
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-from sb3_contrib import RecurrentPPO, IQN
 
 from models import *
 from vizdoom_utils import *
@@ -66,9 +69,9 @@ bot_args_eval = " ".join([
 task_idx = 0
 save_validation = False
 use_recurrency = True
-global_framestack = True
-warmup_episodes = 200
-warmup_n_envs = 20
+global_framestack = False
+global_warmup_episodes = 200
+warmup_n_envs = 40
 frame_repeat = 4
 
 input_rep_ch_num = {
@@ -78,45 +81,81 @@ input_rep_ch_num = {
     3   : 3,    # Semantic Segmentation as RGB
 }
 
-# config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model
+iqn_1 = dict(
+    train_freq              = (4096, "step"),
+    gradient_steps          = 3,
+    target_update_interval  = 4096,
+)
+
+iqn_2 = dict(
+    train_freq              = (128, "step"),
+    gradient_steps          = 3,
+    target_update_interval  = 4096,
+)
+
+iqn_3 = dict(
+    train_freq              = (4, "step"),
+    gradient_steps          = 1,
+    target_update_interval  = 2048,
+)
+
+# config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
 # framestack: -1 = global behavior, 0 = Off, 1 = On
 tasks = [
     # 1-3 (PPO for lr=3e-4)
-    (deathmatch_bot, 3e-4,      1, 1, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO", None),    # 1
-    (deathmatch_bot, 3e-4,      1, 1, "rgb_3e-4",       0, 4, 2050808, -1, "PPO", None),    # 2
-    (deathmatch_bot, 3e-4,      1, 1, "ss_3e-4",        1, 4, 2050808, -1, "PPO", None),    # 3
+    (deathmatch_bot, 3e-4,      1, 1, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 1
+    (deathmatch_bot, 3e-4,      1, 1, "rgb_3e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 2
+    (deathmatch_bot, 3e-4,      1, 1, "ss_3e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 3
 
     # 4-6 (PPO for lr=1e-4)
-    (deathmatch_bot, 1e-4,      1, 1, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO", None),    # 4
-    (deathmatch_bot, 1e-4,      1, 1, "rgb_1e-4",       0, 4, 2050808, -1, "PPO", None),    # 5
-    (deathmatch_bot, 1e-4,      1, 1, "ss_1e-4",        1, 4, 2050808, -1, "PPO", None),    # 6
+    (deathmatch_bot, 1e-4,      1, 1, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 4
+    (deathmatch_bot, 1e-4,      1, 1, "rgb_1e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 5
+    (deathmatch_bot, 1e-4,      1, 1, "ss_1e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 6
 
     # 7-9 (PPO for lr=9e-4)
-    (deathmatch_bot, 9e-4,      1, 1, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO", None),    # 7
-    (deathmatch_bot, 9e-4,      1, 1, "rgb_9e-4",       0, 4, 2050808, -1, "PPO", None),    # 8
-    (deathmatch_bot, 9e-4,      1, 1, "ss_9e-4",        1, 4, 2050808, -1, "PPO", None),    # 9
+    (deathmatch_bot, 9e-4,      1, 1, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 7
+    (deathmatch_bot, 9e-4,      1, 1, "rgb_9e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 8
+    (deathmatch_bot, 9e-4,      1, 1, "ss_9e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 9
 
     # 10-11 (PPO for ss, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "PPO", None),    # 10
-    (deathmatch_bot, 1e-5,      1, 1, "ss_1e-5",        1, 4, 2050808, -1, "PPO", None),    # 11
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "PPO", None, {}),    # 10
+    (deathmatch_bot, 1e-5,      1, 1, "ss_1e-5",        1, 4, 2050808, -1, "PPO", None, {}),    # 11
     
     # 12-13 (PPO for rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808, -1, "PPO", None),    # 12
-    (deathmatch_bot, 1e-5,      1, 1, "rgb_1e-5",       0, 4, 2050808, -1, "PPO", None),    # 13
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808, -1, "PPO", None, {}),    # 12
+    (deathmatch_bot, 1e-5,      1, 1, "rgb_1e-5",       0, 4, 2050808, -1, "PPO", None, {}),    # 13
 
     # 14-15 (PPO for ss+rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None),    # 14
-    (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None),    # 15
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None, {}),    # 14
+    (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None, {}),    # 15
 
     # 16-18 (IQN for lr=1e-3, with framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_rgb_1e-3/best_model.zip"), # 16
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN", "logs/stack_ppo_ss_1e-3/best_model.zip"),     # 17
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN", "logs/stack_ppo_rgb_9e-3/best_model.zip"),    # 18
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  1, "IQN",               # 16
+     "logs/stack_ppo_ss_rgb_1e-3/best_model.zip", iqn_1), 
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  1, "IQN",               # 17
+     "logs/stack_ppo_ss_1e-3/best_model.zip", iqn_1),     # 17
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  1, "IQN",               # 18
+     "logs/stack_ppo_rgb_9e-3/best_model.zip", iqn_1),    # 18
     
-    # 19-21 (IQN for lr=1e-3, without framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN", "logs/ss_rgb_1e-3/best_model.zip"),   # 19
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip"),       # 20
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN", "logs/rgb_9e-3/best_model.zip"),      # 21
+    # 19-21 (IQN for lr=1e-3, without framestack) 4096 train_freq, 3 grad steps, 4096 target update freq
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN",               # 19
+     "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN",               # 20
+     "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
+    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN",               # 21
+     "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
+
+    # 22 128 train_freq, 3 grad steps, 4096 target update freq
+    (deathmatch_bot, 1e-3,      1, 1, "128_ss_1e-3",    1, 4, 2050808,  0, "IQN",               # 22
+     "logs/ss_rgb_1e-3/best_model.zip", {}),
+
+    # 22 4 train_freq, 1 grad steps, 2048 target update freq
+    (deathmatch_bot, 1e-3,      1, 1, "4_ss_1e-3",      1, 4, 2050808,  0, "IQN",               # 23
+     "logs/ss_rgb_1e-3/best_model.zip", {}),
+    
+    # 24-25 (Recurrent PPO for ss+rgb and ss, lr=1e-3)
+    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "R_PPO", None, {}),  # 24
+    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "R_PPO", None, {}),  # 25
     
 ][task_idx:task_idx+1]
 
@@ -146,7 +185,7 @@ def main():
     # DEVICE = check_gpu()
 
     # ep_max (maximum training episode) would overwrite the epoch_num (number of epochs) setting
-    for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, warmup_model in tasks:
+    for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, warmup_model, model_config in tasks:
         model_str = model_str.casefold()
         name = f"{model_str}_{name}"
         if model_str[:2] == "r_":
@@ -197,14 +236,14 @@ def main():
         eval_game_config["add_args"] = bot_args_eval
         eval_env_kwargs["is_eval"] = True
         eval_env_kwargs["game_config"] = eval_game_config
-        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=2 if n_envs > 1 else 1, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
+        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=20, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
 
         if framestack:
             name = f"stack_{name}"
 
         eval_callback =  EvalCallbackWithWebhook(
             eval_env,
-            n_eval_episodes=10,
+            n_eval_episodes=20,
             best_model_save_path=f'./logs/{name}', 
             log_path=f'./logs/{name}', 
             eval_freq=4096 * 2,
@@ -215,39 +254,78 @@ def main():
         if n_envs == 1:
             print(f"Took {time() - t:.2f} seconds to generate training/evaluation environments.")
 
+        mem_available = -1
+        try:
+            import psutil
+        except:
+            psutil = None
+
         t = time()
+        model_desc = ""
+
         match model_str.casefold():
             case "ppo":
                 model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, batch_size=32, 
                             n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
-                model_desc = ""
+                if psutil is not None:
+                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9} GB"
             case "r_ppo":
                 model = RecurrentPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, 
                                      batch_size=32, n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
-                model_desc = ""
+                if psutil is not None:
+                    model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9} GB"
             case "iqn":
                 IQN_policy_kwargs = {
                     # "n_quantiles": 32,
                     # "num_cosine": 32,
+                    # "net_arch": [64,64]
                 }
                 IQN_policy_kwargs.update(policy_kwargs)
 
-                # optimize_memory_usage unsupported for IQN
-                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=204800,
-                            # replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(goal_selection_strategy="episode"), 
-                            train_freq=(4096, "step"), gradient_steps=3, batch_size=32, target_update_interval=4096,
-                            optimize_memory_usage=False, policy_kwargs=IQN_policy_kwargs, seed=seed, exploration_initial_eps=1,
-                            exploration_final_eps=0.01, exploration_fraction=0.025)
-
-                model_desc = f"\nbuffer size: {model.buffer_size}\nwarmup: {warmup_model}"
+                
+                try:
+                    import psutil
+                    mem_available = psutil.virtual_memory().available / 1e9
+                except:
+                    pass
+                
+                exp_frac = 0.1
+                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=409600//ch_num,
+                            replay_buffer_class=ReplayBuffer, replay_buffer_kwargs=dict(handle_timeout_termination = False),  # ER
+                            policy_kwargs=IQN_policy_kwargs, optimize_memory_usage=True, batch_size=32, tau=0.01, seed=seed, 
+                            exploration_initial_eps=1, exploration_final_eps=0.01, exploration_fraction=exp_frac, **model_config)
+                
+                total_memory_usage = model.replay_buffer.observations.nbytes + model.replay_buffer.actions.nbytes
+                total_memory_usage += model.replay_buffer.rewards.nbytes + model.replay_buffer.dones.nbytes
+                mem_usage = f"buffer size: {model.buffer_size}\nbuffer memory usage: {total_memory_usage/1e9:.2f} GB / {mem_available:.2f} GB available"
+                model_desc = f"\n{mem_usage}\nwarmup: {warmup_model}"
 
                 if isinstance(warmup_model, str) and os.path.exists(warmup_model):
-                    assert warmup_n_envs % n_envs == 0, f"warmup_n_envs ({warmup_n_envs}) incompatible with n_envs ({n_envs})"
+                    global warmup_n_envs
+                    
+                    warmup_episodes = min(round(model.replay_buffer.buffer_size * n_envs * 0.9 / 1300), global_warmup_episodes)
 
-                    env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
+                    if warmup_n_envs > warmup_episodes:
+                        warmup_n_envs = (warmup_episodes // n_envs) * n_envs
+                    
+                    assert warmup_n_envs % n_envs == 0 and warmup_n_envs >= n_envs, f"warmup_n_envs value ({warmup_n_envs}) incompatible with n_envs ({n_envs})"
+
+                    warmup_env_kwargs = eval_env_kwargs.copy()
+                    warmup_input_rep = 2
+                    warmup_env_kwargs["input_shape"] = (input_rep_ch_num[warmup_input_rep], 144, 256)
+                    warmup_env_kwargs["input_rep"] = warmup_input_rep
+                    env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=warmup_env_kwargs, vec_env_cls=env_type)
+
                     ppo_for_warmup = PPO.load(warmup_model)
                     env_iter = list(range(warmup_n_envs))
                     finished_eps_count = 0
+                    
+                    import sys
+                    if sys.platform.lower()[:3] == "win":
+                        os.system("cls")
+                    else:
+                        os.system("clear")
+                    print(mem_usage, flush=True)
 
                     pbar = tqdm(total=warmup_episodes, desc=f"Warming up ({warmup_episodes})")
 
@@ -272,7 +350,7 @@ def main():
                         for i in reshape_iter:
                             j = i * n_envs
                             k = j + n_envs
-                            model.replay_buffer.add(obs[j:k,...], new_obs[j:k,...], action[j:k], reward[j:k], done[j:k], info[j:k])
+                            model.replay_buffer.add(obs[j:k,3:4,...], new_obs[j:k,3:4,...], action[j:k], reward[j:k], done[j:k], info[j:k])
                         obs = new_obs
                     model_desc = model_desc + f" (mean reward: {reward_sum / finished_eps_count:.2f})"
                     pbar.set_description_str("Closing environments")
@@ -280,9 +358,16 @@ def main():
                     pbar.set_description_str("Cleaning CUDA cache")
                     torch.cuda.empty_cache()
                     pbar.set_description_str("Garbage collection")
-                    del env, ppo_for_warmup, env_iter, obs, new_obs, reward, done, info, action
+                    del env, ppo_for_warmup, env_iter, obs, new_obs, reward, done, info, action, env_total_reward
                     gc.collect()
                     pbar.close()
+                else:
+                    import sys
+                    if sys.platform.lower()[:3] == "win":
+                        os.system("cls")
+                    else:
+                        os.system("clear")
+                    print(mem_usage, flush=True)
         
         if n_envs == 1:
             print(f"Took {time() - t:.2f} seconds to create agent.")
@@ -292,12 +377,14 @@ def main():
         print(msg, flush=True)
         print(model.policy, flush=True)
 
-        # webhook = discord_bot(extra=name)
-        # eval_callback.attach_webhook(webhook, name=name)
-        # webhook.send_msg(msg)
+        webhook = discord_bot(extra=name)
+        eval_callback.attach_webhook(webhook, name=name)
+        webhook.send_msg(msg)
 
         model.learn(total_timesteps=4_000_000, callback=eval_callback, progress_bar=True)
         model.save(f"./logs/{name}/final.zip")
+        model.env.close()
+        eval_env.close()
 
 if __name__ == "__main__":
     main()
