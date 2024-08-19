@@ -64,7 +64,7 @@ class discord_bot:
             img = PIL.Image.fromarray(img)
         img.save(f"{self.path}/current.png")
 
-    def send_img(self, epoch_num: int):
+    def send_img(self, epoch_num: int) -> bool:
         self.last_upload = []
         epoch_name = epoch_num + 1 if isinstance(epoch_num, int) else str(epoch_num)
         
@@ -80,16 +80,19 @@ class discord_bot:
             f = partial(requests.post, url, payload)
             result = try_upload(f, msg=f"Unable to upload images for epoch {epoch_name}")
             self.last_upload.append(result.json()["data"]["display_url"])
-        except:
+        except Exception as e:
             print(f"Unable to upload images for epoch {epoch_name}")
-            return
+            return False
             
         try:
             self.update_data_img(epoch_name)
             f = partial(requests.post, self.url, json=self.data)
             result = try_upload(f, msg=f"Unable to send images for epoch {epoch_name}")
-        except:
+        except Exception as e:
             print(f"Unable to send images for epoch {epoch_name}")
+            return False
+        
+        return True
     
     def send_string(self, content: str):
         stat_data = {
