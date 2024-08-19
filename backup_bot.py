@@ -12,6 +12,7 @@ row_sep = "\n      "
 check_interval = 60
 also_check_directory = False
 also_check_memory_usage = True
+memory_usage_check_freq = 3
 glob_pattern = "logs/*/evaluations.npz"
 models_per_row = 6
 
@@ -21,7 +22,8 @@ f_filter_model_names = lambda k: k
 f_name_model = lambda k: k.replace("_ss", '').replace("r_ppo_", '').replace("ppo_", '')
 
 # Initialize variables
-prev_progress = ""
+mem_usage = ''
+prev_progress = ''
 bot = DiscordWebhook(extra="Backup")
 dirs = [f for f in glob.glob(glob_pattern) if f_filter_path(f)]
 
@@ -32,8 +34,11 @@ if __name__ == "__main__":
         import psutil
     else:
         psutil = None
+    
+    counter = 0
 
     while True:
+        counter += 1
         if also_check_directory:
             dirs = [f for f in glob.glob(glob_pattern) if f_filter_path(f)]
 
@@ -46,7 +51,7 @@ if __name__ == "__main__":
         all_eval_counts = all_eval_counts_raw
 
         if all_eval_counts != prev_progress:
-            mem = f"{psutil.virtual_memory().available / 1e9:.2f} GB available" if also_check_memory_usage else ''
+            mem_usage = f"{psutil.virtual_memory().available / 1e9:.2f} GB available" if also_check_memory_usage else ''
             ewma = [ewa_smooth(np.mean(v, axis=1), 0.9) for v, _ in evals_values]
             if len(all_evals_tmp) <= models_per_row:
                 all_means = f"{'mean':4s}: " + ' '.join([f"{np.mean(v[-1, :]):4.1f}" for v, _ in evals_values])
@@ -88,7 +93,11 @@ if __name__ == "__main__":
 
             msg = '\n'.join([all_eval_length, all_eval_counts, all_means_prev, all_means, all_means_best, all_means_ewma, all_means_ewma_max, '-'*35] + [f"{k:10s}:" + ' '.join([f"{np.percentile(v[-1, :], i):4.1f}" for i in (0, 25, 50, 75, 100)]) for k, (v, _) in all_evals_tmp.items()])
             update_time = time.strftime("%H:%M")
-            bot.send_msg(f"```{update_time:5s} {mem}\n{'-'*35}\n{msg}\n```")
+            bot.send_msg(f"```{update_time:5s} {mem_usage}\n{'-'*35}\n{msg}\n```")
         prev_progress = all_eval_counts_raw
-        print(f"Last sent update: {update_time} (checked at {time.strftime('%H:%M:%S')})", end="\r")
+
+        if also_check_memory_usage and counter >= memory_usage_check_freq:
+            counter = 0
+            mem_usage = f"{psutil.virtual_memory().available / 1e9:.2f} GB available"
+        print(f"Last sent update: {update_time} (checked at {time.strftime('%H:%M:%S')}) {mem_usage}", end="\r")
         time.sleep(check_interval)
