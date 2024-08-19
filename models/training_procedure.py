@@ -32,12 +32,13 @@ class EvalCallbackWithWebhook(EvalCallback):
     def __init__(self, eval_env: Env | VecEnv, callback_on_new_best: BaseCallback | None = None, callback_after_eval: BaseCallback | None = None, n_eval_episodes: int = 5, eval_freq: int = 10000, log_path: str | None = None, best_model_save_path: str | None = None, deterministic: bool = True, render: bool = False, verbose: int = 1, warn: bool = True):
         super().__init__(eval_env, callback_on_new_best, callback_after_eval, n_eval_episodes, eval_freq, log_path, best_model_save_path, deterministic, render, verbose, warn)
         self.webhook = None
+        self.counter = 1
         self.best_mode_reward = 0.0
         self.best_3_modes = [0, 0, 0]
         self.stats = {"Q1" : [], "Q2" : [], "Q3" : [], "Mode" : []}
 
-    def attach_webhook(self, bot: discord_bot, name: str):
-        if isinstance(bot, discord_bot):
+    def attach_webhook(self, bot: DiscordWebhook, name: str):
+        if isinstance(bot, DiscordWebhook):
             self.webhook = bot
             self.name = name
             self.counter = 1
@@ -105,16 +106,17 @@ class EvalCallbackWithWebhook(EvalCallback):
             self.stats["Q3"].append(Q3)
             mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
             self.last_mean_reward = float(mean_reward)
+
+            eval_time_hr = eval_time // 3600
+            eval_time_hr_str = f"{eval_time_hr}h " if eval_time_hr > 0 else ''
+            eval_time %= 3600
+            eval_time_mi = eval_time // 60
+            eval_time %= 60
+            eval_time_str = f"{eval_time_hr_str}{eval_time_mi}m {eval_time}s"
+            
             if self.webhook is not None:
                 exp_rate_str = f"|exp:{self.model.exploration_rate:.05f}" if "iqn" in self.name else ''
                 title_str = f"**{self.name}** [{self.counter:04d}{exp_rate_str}]"
-
-                eval_time_hr = eval_time // 3600
-                eval_time_hr_str = f"{eval_time_hr}h " if eval_time_hr > 0 else ''
-                eval_time %= 3600
-                eval_time_mi = eval_time // 60
-                eval_time %= 60
-                eval_time_str = f"{eval_time_hr_str}{eval_time_mi}m {eval_time}s"
 
                 msg = f"{title_str}: {mode_reward:.2f} (best:{max(mode_reward, self.best_mode_reward):.2f})"
                 msg += f"\nEval time: {eval_time_str}"
@@ -134,7 +136,7 @@ class EvalCallbackWithWebhook(EvalCallback):
                 else:
                     self.webhook.send_msg(msg)
 
-                self.counter += 1
+            self.counter += 1
 
             if self.verbose >= 1:
                 print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
@@ -236,7 +238,7 @@ def train_agent(game: vzd.vizdoom.DoomGame,
     all_scores = [[], []]
     train_quartiles = [[], [], [], []]
     if (not skip_training):
-        bot = discord_bot(extra=f"deathmatch '{agent.name}' lr={agent.lr:.8f}")
+        bot = DiscordWebhook(extra=f"deathmatch '{agent.name}' lr={agent.lr:.8f}")
         try:
             start = time()
             if load_epoch < 0:

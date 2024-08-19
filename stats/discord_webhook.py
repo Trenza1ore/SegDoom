@@ -31,7 +31,7 @@ def try_upload(f: partial, max_retry: int=3, wait_time: float=0.5, msg: str="Fai
             time.sleep(wait_time)
     raise Exception(msg)
 
-class discord_bot:
+class DiscordWebhook:
     """
     A discord bot class that utilizes discord webhook to send stats and plots during training 
     """    
