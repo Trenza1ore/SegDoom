@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.optim import SGD, Adam, Adagrad
 
 from stable_baselines3 import PPO
-from sb3_contrib import RecurrentPPO, IQN
+from sb3_contrib import RecurrentPPO as RPPO, IQN
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
@@ -101,67 +101,96 @@ iqn_3 = dict(
 
 rppo = dict(env_config={"n_updates" : 1})
 
+rps = dict(env_config={"n_updates" : 1}, n_steps=2048, batch_size=64, 
+           policy_config={"lstm_hidden_size" : 64, "n_lstm_layers" : 1})
+
+rpm = rps.copy()
+rpm.update(dict(env_config={"n_updates" : 1}, n_epochs=4, 
+                policy_config={"lstm_hidden_size" : 128, "n_lstm_layers" : 1}))
+
+st4 = dict(env_config={"n_updates" : 2, "frame_repeat" : 2}, batch_size=64, 
+           policy_config={"net_arch" : dict(pi=[128, 128], vf=[128, 128])})
+
 # config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
 # framestack: -1 = global behavior, 0 = Off, 1 = On
 tasks = [
     # 1-3 (PPO for lr=3e-4)
-    (deathmatch_bot, 3e-4,      1, 1, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 1
-    (deathmatch_bot, 3e-4,      1, 1, "rgb_3e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 2
-    (deathmatch_bot, 3e-4,      1, 1, "ss_3e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 3
+    (deathmatch_bot, 3e-4, "ss_rgb_3e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 1
+    (deathmatch_bot, 3e-4, "rgb_3e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 2
+    (deathmatch_bot, 3e-4, "ss_3e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 3
 
     # 4-6 (PPO for lr=1e-4)
-    (deathmatch_bot, 1e-4,      1, 1, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 4
-    (deathmatch_bot, 1e-4,      1, 1, "rgb_1e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 5
-    (deathmatch_bot, 1e-4,      1, 1, "ss_1e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 6
+    (deathmatch_bot, 1e-4, "ss_rgb_1e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 4
+    (deathmatch_bot, 1e-4, "rgb_1e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 5
+    (deathmatch_bot, 1e-4, "ss_1e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 6
 
     # 7-9 (PPO for lr=9e-4)
-    (deathmatch_bot, 9e-4,      1, 1, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 7
-    (deathmatch_bot, 9e-4,      1, 1, "rgb_9e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 8
-    (deathmatch_bot, 9e-4,      1, 1, "ss_9e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 9
+    (deathmatch_bot, 9e-4, "ss_rgb_9e-4",    2, 4, 2050808, -1, "PPO", None, {}),    # 7
+    (deathmatch_bot, 9e-4, "rgb_9e-4",       0, 4, 2050808, -1, "PPO", None, {}),    # 8
+    (deathmatch_bot, 9e-4, "ss_9e-4",        1, 4, 2050808, -1, "PPO", None, {}),    # 9
 
     # 10-11 (PPO for ss, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808, -1, "PPO", None, {}),    # 10
-    (deathmatch_bot, 1e-5,      1, 1, "ss_1e-5",        1, 4, 2050808, -1, "PPO", None, {}),    # 11
+    (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808, -1, "PPO", None, {}),    # 10
+    (deathmatch_bot, 1e-5, "ss_1e-5",        1, 4, 2050808, -1, "PPO", None, {}),    # 11
     
     # 12-13 (PPO for rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808, -1, "PPO", None, {}),    # 12
-    (deathmatch_bot, 1e-5,      1, 1, "rgb_1e-5",       0, 4, 2050808, -1, "PPO", None, {}),    # 13
+    (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808, -1, "PPO", None, {}),    # 12
+    (deathmatch_bot, 1e-5, "rgb_1e-5",       0, 4, 2050808, -1, "PPO", None, {}),    # 13
 
     # 14-15 (PPO for ss+rgb, lr = [1e-3, 1e-5])
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None, {}),    # 14
-    (deathmatch_bot, 1e-5,      1, 1, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None, {}),    # 15
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None, {}),    # 14
+    (deathmatch_bot, 1e-5, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None, {}),    # 15
 
     # 16-18 (IQN for lr=1e-3, with framestack)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  4, "IQN",               # 16
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4, "IQN",               # 16
      "logs/stack_ppo_ss_rgb_1e-3/best_model.zip", iqn_1), 
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  4, "IQN",               # 17
+    (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  4, "IQN",               # 17
      "logs/stack_ppo_ss_1e-3/best_model.zip", iqn_1),     # 17
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  4, "IQN",               # 18
+    (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  4, "IQN",               # 18
      "logs/stack_ppo_rgb_9e-3/best_model.zip", iqn_1),    # 18
     
     # 19-21 (IQN for lr=1e-3, without framestack) 4096 train_freq, 3 grad steps, 4096 target update freq
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN",               # 19
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN",               # 19
      "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN",               # 20
+    (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  0, "IQN",               # 20
      "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
-    (deathmatch_bot, 1e-3,      1, 1, "rgb_1e-3",       0, 4, 2050808,  0, "IQN",               # 21
+    (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  0, "IQN",               # 21
      "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
 
     # 22 128 train_freq, 3 grad steps, 4096 target update freq
-    (deathmatch_bot, 1e-3,      1, 1, "128_ss_1e-3",    1, 4, 2050808,  0, "IQN",               # 22
+    (deathmatch_bot, 1e-3, "128_ss_1e-3",    1, 4, 2050808,  0, "IQN",               # 22
      "logs/ss_rgb_1e-3/best_model.zip", {}),
 
     # 22 4 train_freq, 1 grad steps, 2048 target update freq
-    (deathmatch_bot, 1e-3,      1, 1, "4_ss_1e-3",      1, 4, 2050808,  0, "IQN",               # 23
+    (deathmatch_bot, 1e-3, "4_ss_1e-3",      1, 4, 2050808,  0, "IQN",               # 23
      "logs/ss_rgb_1e-3/best_model.zip", {}),
     
-    # 24-25 (Recurrent PPO for ss+rgb and ss, lr=1e-3)
-    (deathmatch_bot, 1e-3,      1, 1, "ss_rgb_1e-3",    2, 4, 2050808,  2, "R_PPO", None, rppo),# 24
-    (deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  8, "R_PPO", None, rppo),# 25
+    # 24-26 (Recurrent PPO for ss+rgb and ss, lr=1e-3)
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  2, "R_PPO", None, rppo),# 24
+    (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  8, "R_PPO", None, rppo),# 25
+    (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  8, "R_PPO", None, rppo),# 26
+    
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  8, "R_PPO", None, rppo),# 27
+    
+    # 28-29 Recurrent PPO (lr=1e-3)
+    (deathmatch_bot, 1e-3, "sm_ss_1e-3",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 28
+    (deathmatch_bot, 1e-3, "md_ss_1e-3",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 29
+
+    # 30-31 PPO with framestacking (lr=1e-3)
+    (deathmatch_bot, 1e-3, "s4_ss_1e-3",     1, 4, 2050808,  4,   "PPO", None,  st4),# 30
+    (deathmatch_bot, 1e-3, "s4_ss_rgb_1e-3", 2, 4, 2050808,  4,   "PPO", None,  st4),# 31
+
+    # 32-33 Recurrent PPO (lr=1e-5)
+    (deathmatch_bot, 1e-5, "sm_ss_1e-5",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 32
+    (deathmatch_bot, 1e-5, "md_ss_1e-5",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 33
+
+    # 34-35 PPO with framestacking (lr=1e-5)
+    (deathmatch_bot, 1e-5, "s4_ss_1e-5",     1, 4, 2050808,  4,   "PPO", None,  st4),# 34
+    (deathmatch_bot, 1e-5, "s4_ss_rgb_1e-5", 2, 4, 2050808,  4,   "PPO", None,  st4),# 35
     
 ][task_idx:task_idx+1]
 
-# tasks = [(deathmatch_bot, 1e-3,      1, 1, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
+# tasks = [(deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
 
 def main():
     global tasks
@@ -169,7 +198,9 @@ def main():
     # DEVICE = check_gpu()
 
     # ep_max (maximum training episode) would overwrite the epoch_num (number of epochs) setting
-    for config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, warmup_model, model_config in tasks:
+    for config, lr, name, input_rep, n_envs, seed, framestack, model_str, warmup_model, model_config in tasks:
+        model_config: dict[str, object]
+
         model_str = model_str.casefold()
         name = f"{model_str}_{name}"
 
@@ -224,7 +255,7 @@ def main():
         eval_game_config["add_args"] = bot_args_eval
         eval_env_kwargs["is_eval"] = True
         eval_env_kwargs["game_config"] = eval_game_config
-        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=n_envs, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
+        eval_env = make_vec_env(DoomBotDeathMatch, n_envs=10, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
 
         if framestack:
             if "r_" in model_str:
@@ -234,10 +265,10 @@ def main():
 
         eval_callback =  EvalCallbackWithWebhook(
             eval_env,
-            n_eval_episodes=20,
+            n_eval_episodes=10,
             best_model_save_path=f'./logs/{name}', 
             log_path=f'./logs/{name}', 
-            eval_freq=4096 * 2,
+            eval_freq=4096*2,
             deterministic=True, 
             render=False
         )
@@ -256,13 +287,34 @@ def main():
 
         match model_str.casefold():
             case "ppo":
-                model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, batch_size=32, 
-                            n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
+                PPO_policy_kwargs = policy_kwargs.copy()
+                PPO_policy_kwargs.update({
+
+                })
+                PPO_policy_kwargs.update(model_config.get("policy_config", {}))
+
+                n_steps = model_config.get("n_steps", 4096)
+                n_epochs =  model_config.get("n_epochs", 3)
+                batch_size =  model_config.get("batch_size", 32)
+
+                model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps, batch_size=batch_size, 
+                            n_epochs=n_epochs, policy_kwargs=PPO_policy_kwargs, seed=seed)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "r_ppo":
-                model = RecurrentPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=4096, 
-                                     batch_size=32, n_epochs=3, policy_kwargs=policy_kwargs, seed=seed)
+                RPPO_policy_kwargs = policy_kwargs.copy()
+                RPPO_policy_kwargs.update({
+                    "lstm_hidden_size"  : 128,
+                    "n_lstm_layers"     : 2,
+                })
+                RPPO_policy_kwargs.update(model_config.get("policy_config", {}))
+
+                n_steps = model_config.get("n_steps", 4096)
+                n_epochs =  model_config.get("n_epochs", 3)
+                batch_size =  model_config.get("batch_size", 32)
+
+                model = RPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps,
+                                     batch_size=batch_size, n_epochs=n_epochs, policy_kwargs=RPPO_policy_kwargs, seed=seed)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "iqn":
