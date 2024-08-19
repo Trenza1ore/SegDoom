@@ -141,6 +141,7 @@ tasks = [
     (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808, -1, "PPO", None, {}),    # 14
     (deathmatch_bot, 1e-5, "ss_rgb_1e-5",    2, 4, 2050808, -1, "PPO", None, {}),    # 15
 
+    # [Failures]
     # 16-18 (IQN for lr=1e-3, with framestack)
     (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4, "IQN",               # 16
      "logs/stack_ppo_ss_rgb_1e-3/best_model.zip", iqn_1), 
@@ -149,6 +150,7 @@ tasks = [
     (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  4, "IQN",               # 18
      "logs/stack_ppo_rgb_9e-3/best_model.zip", iqn_1),    # 18
     
+    # [Failures]
     # 19-21 (IQN for lr=1e-3, without framestack) 4096 train_freq, 3 grad steps, 4096 target update freq
     (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  0, "IQN",               # 19
      "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
@@ -157,22 +159,24 @@ tasks = [
     (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  0, "IQN",               # 21
      "logs/ss_rgb_1e-3/best_model.zip", iqn_1),
 
+    # [Failures]
     # 22 128 train_freq, 3 grad steps, 4096 target update freq
     (deathmatch_bot, 1e-3, "128_ss_1e-3",    1, 4, 2050808,  0, "IQN",               # 22
      "logs/ss_rgb_1e-3/best_model.zip", {}),
 
+    # [Failures]
     # 22 4 train_freq, 1 grad steps, 2048 target update freq
     (deathmatch_bot, 1e-3, "4_ss_1e-3",      1, 4, 2050808,  0, "IQN",               # 23
      "logs/ss_rgb_1e-3/best_model.zip", {}),
     
+    # [Failures]
     # 24-26 (Recurrent PPO for ss+rgb and ss, lr=1e-3)
     (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  2, "R_PPO", None, rppo),# 24
     (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  8, "R_PPO", None, rppo),# 25
     (deathmatch_bot, 1e-3, "rgb_1e-3",       0, 4, 2050808,  8, "R_PPO", None, rppo),# 26
-    
     (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  8, "R_PPO", None, rppo),# 27
     
-    # 28-29 Recurrent PPO (lr=1e-3)
+    # 28-29 Recurrent PPOs (high lr): small model with lr=1e-3 and medium model with lr=5e-4
     (deathmatch_bot, 1e-3, "sm_ss_1e-3",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 28
     (deathmatch_bot, 5e-4, "md_ss_5e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 29
 
@@ -180,13 +184,17 @@ tasks = [
     (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  4,   "PPO", None,  st4),# 30
     (deathmatch_bot, 5e-4, "ss_5e-4",        1, 4, 2050808,  4,   "PPO", None,  st4),# 31
 
-    # 32-33 Recurrent PPO (lr=1e-5)
+    # 32-33 Recurrent PPOs ( mid lr): small model with lr=5e-4 and medium model with lr=3e-4
     (deathmatch_bot, 5e-4, "sm_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 32
     (deathmatch_bot, 3e-4, "md_ss_3e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 33
 
-    # 34-35 PPO with framestacking (lr=1e-5)
-    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 34
-    (deathmatch_bot, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 35
+    # 34-35 Recurrent PPOs ( low lr): small model with lr=3e-4 and medium model with lr=1e-4
+    (deathmatch_bot, 3e-4, "sm_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 34
+    (deathmatch_bot, 1e-4, "md_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 35
+
+    # 36-37 PPO with framestacking (lr=1e-5)
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 36
+    (deathmatch_bot, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 37
     
 ][task_idx:task_idx+1]
 
@@ -420,7 +428,7 @@ def main():
         print(model.policy, flush=True)
         print(msg, flush=True)
 
-        webhook = discord_bot(extra=name)
+        webhook = DiscordWebhook(extra=name)
         eval_callback.attach_webhook(webhook, name=name)
         webhook.send_msg(msg)
 
