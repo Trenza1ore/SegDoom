@@ -2,7 +2,11 @@ from typing import Callable
 
 import cv2
 import numpy as np
+
 # import skimage.transform
+# This performance is unacceptable, remove support for skimage
+# def resize_ski(img, resolution):
+#     return (skimage.transform.resize(img, resolution)*256).astype('uint8')
 
 def adjust_axis(f: Callable):
     def g(img: np.ndarray, resolution: tuple[int, int]):
@@ -21,9 +25,6 @@ def resize_cv_linear(img: np.ndarray, resolution: tuple[int, int]) -> np.ndarray
     """
     return cv2.resize(img, resolution)
 
-# This performance is unacceptable, remove support for skimage
-# def resize_ski(img, resolution):
-#     return (skimage.transform.resize(img, resolution)*256).astype('uint8')
 
 def resize_cv_nearest(img: np.ndarray, resolution: tuple[int, int]) -> np.ndarray:
     """Resize an image to target resolution via nearest neighbour interpolation

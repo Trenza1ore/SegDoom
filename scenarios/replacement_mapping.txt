@@ -1,0 +1,7 @@
+// For bots_deathmatch_map1_alt_wall_texture.wad, we replaced the following textures:
+MFLR8_1 -> BRONZE4
+BRONZE3 -> BRONZE4
+
+// For bots_deathmatch_map1_alt_all_texture.wad, we additionally replaced these textures:
+CEIL3_5 -> CEIL3_6
+FLOOR0_7 -> CEIL3_6
