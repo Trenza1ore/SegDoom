@@ -81,21 +81,16 @@ class DoomBotDeathMatch(gym.Env):
         self.semseg = semseg
         self.game = create_game(**game_config)
 
-        if not (seed is None):
+        if seed is not None:
             self.game.set_seed(seed)
+
         if set_map:
             self.game.set_doom_map(set_map)
-        
-        self.game.new_episode()
-        self.game.send_game_command("removebots")
-        for _ in range(self.bot_num):
-            self.game.send_game_command('addbot')
         
         if reward_tracker is None:
             self.reward_tracker = RewardTracker(self.game)
         else:
             self.reward_tracker = reward_tracker
-        
 
         match input_rep:
             case 1:
@@ -152,9 +147,11 @@ class DoomBotDeathMatch(gym.Env):
         return observation, reward, terminated, truncated, info
     
     def reset(self, seed=None, options=None):
-        if not (seed is None):
+        super().reset(seed=seed)
+        if seed is not None:
             self.action_space.seed(seed)
             self.game.set_seed(seed)
+        
         self.game.new_episode()
         self.game.send_game_command("removebots")
         for _ in range(self.bot_num):
@@ -291,9 +288,11 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
     
     def reset(self, seed=None, options=None):
+        gym.Env.reset(self, seed=seed)
         if not (seed is None):
             self.action_space.seed(seed)
             self.game.set_seed(seed)
+
         self.start_time = time()
         self.game.new_episode()
         self.game.send_game_command("removebots")
