@@ -108,7 +108,7 @@ rpm = rps.copy()
 rpm.update(dict(env_config={"n_updates" : 1}, n_epochs=4, 
                 policy_config={"lstm_hidden_size" : 128, "n_lstm_layers" : 1}))
 
-st4 = dict(env_config={"n_updates" : 2, "frame_repeat" : 2}, batch_size=64, 
+st4 = dict(env_config={"n_updates" : 1, "frame_repeat" : 4}, batch_size=64, 
            policy_config={"net_arch" : dict(pi=[128, 128], vf=[128, 128])})
 
 # config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
@@ -174,19 +174,19 @@ tasks = [
     
     # 28-29 Recurrent PPO (lr=1e-3)
     (deathmatch_bot, 1e-3, "sm_ss_1e-3",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 28
-    (deathmatch_bot, 1e-3, "md_ss_1e-3",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 29
+    (deathmatch_bot, 5e-4, "md_ss_5e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 29
 
     # 30-31 PPO with framestacking (lr=1e-3)
-    (deathmatch_bot, 1e-3, "s4_ss_1e-3",     1, 4, 2050808,  4,   "PPO", None,  st4),# 30
-    (deathmatch_bot, 1e-3, "s4_ss_rgb_1e-3", 2, 4, 2050808,  4,   "PPO", None,  st4),# 31
+    (deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  4,   "PPO", None,  st4),# 30
+    (deathmatch_bot, 5e-4, "ss_5e-4",        1, 4, 2050808,  4,   "PPO", None,  st4),# 31
 
     # 32-33 Recurrent PPO (lr=1e-5)
-    (deathmatch_bot, 1e-5, "sm_ss_1e-5",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 32
-    (deathmatch_bot, 1e-5, "md_ss_1e-5",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 33
+    (deathmatch_bot, 5e-4, "sm_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 32
+    (deathmatch_bot, 3e-4, "md_ss_3e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 33
 
     # 34-35 PPO with framestacking (lr=1e-5)
-    (deathmatch_bot, 1e-5, "s4_ss_1e-5",     1, 4, 2050808,  4,   "PPO", None,  st4),# 34
-    (deathmatch_bot, 1e-5, "s4_ss_rgb_1e-5", 2, 4, 2050808,  4,   "PPO", None,  st4),# 35
+    (deathmatch_bot, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 34
+    (deathmatch_bot, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 35
     
 ][task_idx:task_idx+1]
 
