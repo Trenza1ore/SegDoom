@@ -40,7 +40,7 @@ class ReplayMemoryNoFrames:
 
 class DoomBotDeathMatch(gym.Env):
 
-    metadata = {"render_modes": ["human"], "render_fps": 35}
+    metadata = {"render_modes": ["offscreen", "human", "rgb_array"], "render_fps": 35}
 
     def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config, reward_tracker: RewardTracker|None=None, 
                  frame_repeat: int=4, is_eval: bool=False, seed: int=None, input_rep: int=0, set_map: str='', realtime_ss=None,
