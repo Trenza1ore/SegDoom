@@ -21,7 +21,9 @@ def arr_mode(arr: np.ndarray, keep_shape: bool=False) -> np.ndarray | np.integer
     counts = np.zeros(bins.shape, dtype=np.uint64)
     for i in range(bins.shape[0]):
         counts[i] = (arr == bins[i]).sum()
-    result = bins[counts.argmax()]
+    argmax = counts.argmax()
+    # result = bins[argmax]                             # Only keeps one mode
+    result = (bins[counts == counts[argmax]]).mean()    # Account for multiple modes
     if keep_shape:
         result = np.ones_like(arr) * result
     return result
@@ -31,6 +33,7 @@ class EvalCallbackWithWebhook(EvalCallback):
         super().__init__(eval_env, callback_on_new_best, callback_after_eval, n_eval_episodes, eval_freq, log_path, best_model_save_path, deterministic, render, verbose, warn)
         self.webhook = None
         self.best_mode_reward = 0.0
+        self.best_3_modes = [0, 0, 0]
         self.stats = {"Q1" : [], "Q2" : [], "Q3" : [], "Mode" : []}
 
     def attach_webhook(self, bot: discord_bot, name: str):
@@ -58,6 +61,7 @@ class EvalCallbackWithWebhook(EvalCallback):
             # Reset success rate buffer
             self._is_success_buffer = []
 
+            eval_time = time()
             episode_rewards, episode_lengths = evaluate_policy(
                 self.model,
                 self.eval_env,
@@ -68,6 +72,7 @@ class EvalCallbackWithWebhook(EvalCallback):
                 warn=self.warn,
                 callback=self._log_success_callback,
             )
+            eval_time = round(time() - eval_time)
 
             if self.log_path is not None:
                 assert isinstance(episode_rewards, list)
@@ -91,7 +96,7 @@ class EvalCallbackWithWebhook(EvalCallback):
                 )
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
-            mode_reward = int(arr_mode(episode_rewards))
+            mode_reward = float(arr_mode(episode_rewards))
             Q1, Q2, Q3 = [float(np.percentile(episode_rewards, i)) for i in (25, 50, 75)]
             IQR = Q3 - Q1
             self.stats["Mode"].append(mode_reward)
@@ -103,7 +108,16 @@ class EvalCallbackWithWebhook(EvalCallback):
             if self.webhook is not None:
                 exp_rate_str = f"|exp:{self.model.exploration_rate:.05f}" if "iqn" in self.name else ''
                 title_str = f"**{self.name}** [{self.counter:04d}{exp_rate_str}]"
-                msg = f"{title_str}: {mode_reward:d} (best:{round(max(mode_reward, self.best_mode_reward)):d})"
+
+                eval_time_hr = eval_time // 3600
+                eval_time_hr_str = f"{eval_time_hr}h " if eval_time_hr > 0 else ''
+                eval_time %= 3600
+                eval_time_mi = eval_time // 60
+                eval_time %= 60
+                eval_time_str = f"{eval_time_hr_str}{eval_time_mi}m {eval_time}s"
+
+                msg = f"{title_str}: {mode_reward:.2f} (best:{max(mode_reward, self.best_mode_reward):.2f})"
+                msg += f"\nEval time: {eval_time_str}"
 
                 if self.counter >= 1:
                     plt.clf()
@@ -115,7 +129,8 @@ class EvalCallbackWithWebhook(EvalCallback):
                     plt.title(title_str.replace("**", ''))
                     plt.legend()
                     plt.savefig(f"{self.webhook.path}/current.png")
-                    self.webhook.send_img(msg)
+                    if not self.webhook.send_img(msg):
+                        self.webhook.send_msg(msg)
                 else:
                     self.webhook.send_msg(msg)
 
@@ -125,6 +140,7 @@ class EvalCallbackWithWebhook(EvalCallback):
                 print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
             # Add to current Logger
+            self.logger.record("eval/evaluation_time", eval_time_str)
             self.logger.record("eval/mean_ep_length", mean_ep_length)
             self.logger.record("eval/mean_reward", float(mean_reward))
             self.logger.record("eval/mode_reward", float(mode_reward))
@@ -143,12 +159,14 @@ class EvalCallbackWithWebhook(EvalCallback):
             self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
             self.logger.dump(self.num_timesteps)
 
-            if mode_reward > self.best_mode_reward:
-                if self.verbose >= 1:
-                    print("New best mean reward!")
+            if mode_reward >= self.best_3_modes[-1]:
+                self.best_3_modes.pop()
+                self.best_3_modes.append(mode_reward)
+                self.best_3_modes.sort(reverse=True)
                 if self.best_model_save_path is not None:
-                    self.model.save(os.path.join(self.best_model_save_path, f"best_model_{mode_reward}"))
-                self.best_mode_reward = float(mode_reward)
+                    save_path = os.path.join(self.best_model_save_path, f"best_model_{mode_reward}_{self.counter}")
+                    self.model.save(save_path)
+                self.best_mode_reward = float(max(self.best_3_modes))
                 # Trigger callback on new best model, if needed
                 if self.callback_on_new_best is not None:
                     continue_training = self.callback_on_new_best.on_step()
