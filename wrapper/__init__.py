@@ -40,9 +40,9 @@ class ReplayMemoryNoFrames:
 
 class DoomBotDeathMatch(gym.Env):
 
-    metadata = {"render_modes": ["offscreen", "human", "rgb_array"], "render_fps": 35}
+    metadata = {"render_modes": ["offscreen"], "render_fps": 35}
 
-    def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config, reward_tracker: RewardTracker|None=None, 
+    def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config, reward_tracker: RewardTracker|dict|None=None, 
                  frame_repeat: int=4, is_eval: bool=False, seed: int=None, input_rep: int=0, set_map: str='', realtime_ss=None,
                  frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, bot_num: int=8):
         assert isinstance(frame_repeat, int) and frame_repeat > 0, f"Frame repeat value ({frame_repeat}) must be an integer >= 1"
@@ -89,6 +89,8 @@ class DoomBotDeathMatch(gym.Env):
         
         if reward_tracker is None:
             self.reward_tracker = RewardTracker(self.game)
+        elif isinstance(reward_tracker, dict):
+            self.reward_tracker = RewardTracker(self.game, **reward_tracker)
         else:
             self.reward_tracker = reward_tracker
 
@@ -108,7 +110,7 @@ class DoomBotDeathMatch(gym.Env):
         if self.game.is_player_dead() and not terminated:
             self.game.respawn_player()
             terminated = self.game.is_episode_finished()
-            reward -= 1
+            reward -= self.reward_tracker.death_penalty()
         truncated = terminated
         info = {}
         if self.is_eval:
@@ -126,7 +128,7 @@ class DoomBotDeathMatch(gym.Env):
             if self.game.is_player_dead() and not terminated:
                 self.game.respawn_player()
                 terminated = self.game.is_episode_finished()
-                reward -= 1
+                reward -= self.reward_tracker.death_penalty()
             # Early termination
             if terminated:
                 missing_frames = self.n_updates - t
@@ -174,7 +176,7 @@ class DoomBotDeathMatch(gym.Env):
 
 class DoomBotDeathMatchCapture(DoomBotDeathMatch):
     def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config: dict[str, object], 
-                 reward_tracker: RewardTracker | None = None, frame_repeat: int = 4, is_eval: bool = False, 
+                 reward_tracker: RewardTracker | dict | None = None, frame_repeat: int = 4, is_eval: bool = False, 
                  seed: int = None, input_rep: int = 0, set_map: str='', memsize: int=40_000, smooth_frame: bool=False,
                  realtime_ss: bool=False, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, 
                  bot_num: int=8, only_pos: bool=False):

@@ -17,8 +17,10 @@ POS_X:              int = GameVariable.POSITION_X
 POS_Y:              int = GameVariable.POSITION_Y
 
 class RewardTracker:
-    def __init__(self, game) -> None:
+    def __init__(self, game, **kwargs) -> None:
         self.game = game
+        self.factor_frag = 1
+        self.factor_death = 1
         self.factor_pos_health = 0.02
         self.factor_neg_health = 0.01
         self.factor_pos_ammo = 0.02
@@ -27,6 +29,10 @@ class RewardTracker:
         self.factor_pos_movement = 0.00005
         self.factor_neg_movement = 0.0025
         self.factor_pos_threshold = 3.0
+        for k, v in kwargs.items():
+            if k[:7] != "factor_":
+                k = "factor_" + k
+            setattr(self, k, v)
         self.reset_last_vars()
     
     def reset_last_vars(self) -> None:
@@ -64,7 +70,7 @@ class RewardTracker:
         self.last_ammo = ammo
 
         reward = (dhealth * self.factor_pos_health) if dhealth > 0 else (dhealth * self.factor_neg_health)
-        reward += self.delta_frag
+        reward += self.delta_frag * self.factor_frag
         reward += ddamage * self.factor_damage
         # reward += darmor
         reward += self.factor_pos_movement if dpos > self.factor_pos_threshold else -self.factor_neg_movement
@@ -73,6 +79,9 @@ class RewardTracker:
         # self.ep_len += 1
 
         return reward
+    
+    def death_penalty(self) -> int | float:
+        return self.factor_death
     
     def get_frag_count(self) -> int | float:
         return self.game.get_game_variable(FRAG_COUNT)
