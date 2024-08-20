@@ -169,8 +169,8 @@ TEXTMAP*.txt
 # Saved data
 *.pt
 *.pth
-*.npy
-*.npz
+# *.npy
+# *.npz
 *.zip
 *.pkl
 
@@ -193,5 +193,6 @@ run?*.[bp][ay]*
 plt?*.[bp][ay]*
 collect?*.[bp][ay]*
 
-logs/
+
+logs/*/*[fm][io][nd][ae]l*
 webhook.config
