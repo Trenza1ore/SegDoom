@@ -9,8 +9,9 @@ import torch
 import torch.nn as nn
 from torch.optim import SGD, Adam, Adagrad
 
+from iqn import IQN
 from stable_baselines3 import PPO
-from sb3_contrib import RecurrentPPO as RPPO, IQN
+from sb3_contrib import RecurrentPPO as RPPO
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
