@@ -177,6 +177,10 @@ TEXTMAP*.txt
 # For testing
 test*.ipynb
 test*.py
+fetch_*.py
+
+# Too much effort to implement memory-efficient Prioritized Experience Replay
+models/PER_SB3.py
 
 # Recorded media
 *.gif

@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 import itertools as it
@@ -7,11 +8,12 @@ import psutil
 from tqdm.rich import tqdm
 
 from stable_baselines3 import PPO
-from sb3_contrib import RecurrentPPO, IQN
+from sb3_contrib import RecurrentPPO as RPPO, IQN
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
+import scenarios
 from models import *
 from wrapper import *
 from vizdoom_utils import *
@@ -21,7 +23,8 @@ from models.training_procedure import *
 # The program to collect gameplay footage/data/performance of evaluation sessions
 # ====================================================================================
 
-task_idx = 0                # set this to -1 to execute all tasks in tasks list
+# set this to -1 to execute all tasks in tasks list
+task_idx = 0
 
 # config
 save_dir = "./logs"
@@ -30,23 +33,23 @@ save_batch_size = 200       # (roughly) how many episodes are saved simultaneous
 global_n_env_eval = 40      # number of venv (vectorized environment) to use by default
 global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing, DummyVecEnv 
-# env_type = DummyVecEnv    # DummyVecEnv isn't fully supported
+# env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
 
-# scenarios_path = vzd.scenarios_path
-scenarios_path = "./scenarios"
+default_env_config = scenarios.FrozenDict(n_updates=1, frame_repeat=4)
 
-# Deathmatch Scenarios
-maps = {
-    "map1"  : os.path.join(scenarios_path, "bots_deathmatch_1.cfg"),
-    "map1a" : os.path.join(scenarios_path, "bots_deathmatch_1a.cfg"),
-    "map1w" : os.path.join(scenarios_path, "bots_deathmatch_1w.cfg"),
-    "map2"  : os.path.join(scenarios_path, "bots_deathmatch_2.cfg"),
-    "map2s" : os.path.join(scenarios_path, "bots_deathmatch_2s.cfg"),
-    "map3"  : os.path.join(scenarios_path, "bots_deathmatch_3.cfg"),
-}
-for k in list(maps.keys()):
-    if "rtss_" not in k:
-        maps["rtss_" + k] = maps[k]
+# Capturing groups: 
+# 1 - framestack value              (int)
+# 2 - model type                    (str=["ppo", "r_ppo", "iqn"]) 
+# 3 - model variant identifier      (str=["sm", "md", "lg"]) 
+# 4 - model's input representation  (str=["rgb", "ss", "ss_sgb", "srgb"]) 
+# 5 - model's learning rate value   (float)
+extract_model_params = re.compile(
+    r"^(?:[rs]([0-9]+)_)?" + \
+    r"(?:((?:r_)?[ip][qp][no])_)?" + \
+    r"(?:([sml][mdg])_)?" + \
+    r"((?:ss_rgb)|(?:srgb)|(?:ss)|(?:rgb))_" + \
+    r"([0-9\+\-\.]+[e]?[0-9\+\-]*)"
+)
 
 # Game arguments
 bot_args = bot_args_eval = " ".join([
@@ -64,12 +67,10 @@ bot_args = bot_args_eval = " ".join([
     "+sv_noexit 1"
 ])
 
-# Definition for model input's representations
-input_rep_ch_num = {
-    0   : 3,    # type 0: 3-channel RGB , coloured game frame
-    1   : 1,    # type 1: 1-channel S   , ss (semantic segmentation) mask
-    2   : 4,    # type 2: 4-channel RGBS, coloured game frame + ss mask
-    3   : 3     # type 3: 3-channel RGB , ss mask mapped to RGB via colour map
+model_types = {
+    "ppo"   : PPO,
+    "r_ppo" : RPPO,
+    "iqn"   : IQN,
 }
 
 # Tasks to perform
@@ -139,11 +140,24 @@ env_kwargs_template = {
 
 def main():
     global tasks
-    
+
     for config, name, input_rep, seed, additonal_config, model_path in tasks:
+        framestack = 0
+        model_type = None
+
+        model_info = extract_model_params.fullmatch(name)
+        if model_info is not None:
+            framestack_str, model_type, _, input_rep_str, _ = model_info.groups()
+            if framestack_str is not None and int(framestack_str) > 1:
+                framestack = int(framestack_str)
+            if input_rep_str is not None:
+                input_rep = input_rep_str
+
         save_name = f"{config}_{name}"
-        ch_num = input_rep_ch_num[input_rep]
-        game_config = dict(config_path=maps[config], color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
+        ch_num = scenarios.input_rep_ch_num[input_rep]
+        if framestack:
+            ch_num *= framestack
+        game_config = dict(config_path=scenarios.maps[config], color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
 
         game = create_game(**game_config)
         n = game.get_available_buttons_size()
@@ -170,7 +184,8 @@ def main():
         env_kwargs = env_kwargs_template.copy()
         env_kwargs.update({
             "realtime_ss"   : "rtss" in save_name,
-            "frame_stack"   : "stack" in save_name,
+            "frame_stack"   : bool(framestack),
+            "buffer_size"   : int(framestack),
             "actions"       : act_actions, 
             "input_shape"   : (ch_num, 144, 256), 
             "game_config"   : game_config,
@@ -179,16 +194,17 @@ def main():
             "memsize"       : mem_size_est,
         })
 
+        env_kwargs.update(additonal_config.get("env_config", default_env_config))
+
         policy_kwargs = {
             "normalize_images"          : True,
             "features_extractor_class"  : CustomCNN,
             "features_extractor_kwargs" : {"features_dim" : 128}
         }
 
-        if input_rep == 3:
+        if input_rep in (3, "srgb"):
             policy_kwargs["normalize_images"] = False
 
-        t = time()
         eval_env_kwargs = env_kwargs.copy()
         eval_game_config = game_config.copy()
         eval_game_config["add_args"] = bot_args_eval
@@ -204,14 +220,18 @@ def main():
 
 
         mem = psutil.virtual_memory().available / 1e9
-        # Not the most elegant way to do it, but if it works, it works...
+
+        # Not the most elegant way to do it, but I guess it works...
+        model_cls = model_types.get(model_type, RPPO)
         try:
-            model = PPO.load(f"{save_dir}/{name}/{model_path}")
+            model = model_cls.load(f"{save_dir}/{name}/{model_path}")
         except:
             try:
-                model = RecurrentPPO.load(f"{save_dir}/{name}/{model_path}")
+                model_cls = PPO
+                model = model_cls.load(f"{save_dir}/{name}/{model_path}")
             except:
-                model = IQN.load(f"{save_dir}/{name}/{model_path}")
+                model_cls = IQN
+                model = model_cls.load(f"{save_dir}/{name}/{model_path}")
 
         if sys.platform.lower()[:3] == "win":
             os.system("cls")

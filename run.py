@@ -3,7 +3,6 @@ import gc
 import itertools as it
 from time import sleep, time
 
-import vizdoom as vzd
 from tqdm.rich import tqdm
 
 import torch
@@ -19,6 +18,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
+import scenarios
 from models import *
 from vizdoom_utils import *
 from wrapper import DoomBotDeathMatch
@@ -28,17 +28,19 @@ from models.training_procedure import *
 # The main program to run training sessions
 # ====================================================================================
 
-# Deathmatch Scenarios
-# scenarios_path = vzd.scenarios_path
-scenarios_path = "./scenarios"
-training_map = os.path.join(scenarios_path, "bots_deathmatch_1.cfg")
+# set this to -1 to execute all tasks in tasks list
+task_idx = 0
+
+# Train on map1 only
+training_map = scenarios.maps["map1"]
 
 # Tips for config options
 # save_validation should be switch to True at least in the first run to check the size of each save
 # format for a task: 
 # (scenario_config, learning rate, target number for episodes to train, save interval, unique id)
 
-bot_args = " ".join([
+# Game arguments
+bot_args = bot_args_eval = " ".join([
     "-host 1",
     "-deathmatch",
     "+viz_nocheat 0",
@@ -53,35 +55,13 @@ bot_args = " ".join([
     "+sv_noexit 1"
 ])
 
-bot_args_eval = " ".join([
-    "-host 1",
-    "-deathmatch",
-    "+viz_nocheat 0",
-    "+cl_run 1",
-    "+name AGENT",
-    "+colorset 0",
-    "+sv_forcerespawn 1",
-    "+sv_respawnprotect 1",
-    # "+sv_losefrag 1",
-    "+sv_nocrouch 1",
-    "+sv_noexit 1"
-])
-
 # config
-task_idx = 0
 save_validation = False
 use_recurrency = True
 global_framestack = 0
 global_warmup_episodes = 200
 warmup_n_envs = 40
 frame_repeat = 4
-
-input_rep_ch_num = {
-    0   : 3,    # RGB
-    1   : 1,    # Semantic Segmentation Mask
-    2   : 4,    # RGBS (S = Semantic Segmentation Mask)
-    3   : 3,    # Semantic Segmentation as RGB
-}
 
 iqn_1 = dict(
     train_freq              = (4096, "step"),
@@ -198,7 +178,10 @@ tasks = [
     (training_map, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 36
     (training_map, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 37
     
-][task_idx:task_idx+1]
+]
+
+if task_idx >= 0:
+    tasks = tasks[task_idx:task_idx+1]
 
 # tasks = [(deathmatch_bot, 1e-3, "ss_1e-3",        1, 4, 2050808,  0, "IQN", "logs/ss_1e-3/best_model.zip")]
 
@@ -214,7 +197,7 @@ def main():
 
         if framestack < 0:
             framestack = global_framestack
-        ch_num = input_rep_ch_num[input_rep]
+        ch_num = scenarios.input_rep_ch_num[input_rep]
         if framestack:
             ch_num *= framestack
         game_config = dict(config_path=config, color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
@@ -362,7 +345,7 @@ def main():
 
                     warmup_env_kwargs = eval_env_kwargs.copy()
                     warmup_input_rep = 2
-                    warmup_env_kwargs["input_shape"] = (input_rep_ch_num[warmup_input_rep], 144, 256)
+                    warmup_env_kwargs["input_shape"] = (scenarios.input_rep_ch_num[warmup_input_rep], 144, 256)
                     warmup_env_kwargs["input_rep"] = warmup_input_rep
                     env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=warmup_env_kwargs, vec_env_cls=env_type)
 
