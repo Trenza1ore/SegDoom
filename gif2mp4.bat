@@ -1,2 +1,2 @@
 REM You can change 1M and 3M to your desired average/maximum bitrate
-for /R %%f in (*.gif) do ffmpeg -hwaccel_output_format cuda -i %%f -vf "fps=30" -c:v h264_nvenc -pix_fmt yuv420p -preset slow -rc vbr_hq -b:v 1M -maxrate:v 3M -y %%f.mp4
+for /R %%f in (*.gif) do ffmpeg -hwaccel_output_format cuda -i %%f -vf "fps=35" -c:v h264_nvenc -pix_fmt yuv420p -preset slow -rc vbr_hq -b:v 1M -maxrate:v 3M -y %%f.mp4
