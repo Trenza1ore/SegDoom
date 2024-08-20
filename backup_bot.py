@@ -12,12 +12,12 @@ row_sep = "\n      "
 check_interval = 60
 also_check_directory = False
 also_check_memory_usage = True
-memory_usage_check_freq = 3
+memory_usage_check_freq = 5
 glob_pattern = "logs/*/evaluations.npz"
 models_per_row = 6
 
 # Custom filtering / formatting settings
-f_filter_path = lambda k: any(i in k for i in ['s4', 'r1', 'r3'])
+f_filter_path = lambda k: any(i in k for i in ['r1_r_ppo_sm_3e-4', 'r1_r_ppo_sm_1e-4', 'r3_r_ppo_md_ss_3e-4', 'r3_r_ppo_md_ss_2e-4', 'r3_r_ppo_md_ss_4e-4', 's4_ppo'])
 f_filter_model_names = lambda k: k
 f_name_model = lambda k: k.replace("_ss", '').replace("r_ppo_", '').replace("ppo_", '')
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             ewma = [ewa_smooth(np.mean(v, axis=1), 0.9) for v, _ in evals_values]
             if len(all_evals_tmp) <= models_per_row:
                 all_means = f"{'mean':4s}: " + ' '.join([f"{np.mean(v[-1, :]):4.1f}" for v, _ in evals_values])
-                all_means_prev = f"{'prev':4s}: " + ' '.join([f"{np.mean(v[-2, :]) if len(v) > 1 else '-1':4.1f}" for v, _ in evals_values])
+                all_means_prev = f"{'prev':4s}: " + ' '.join([f"{np.mean(v[-2, :]) if len(v) > 1 else -1:4.1f}" for v, _ in evals_values])
                 all_means_best = f"{'best':4s}: " + ' '.join([f"{np.mean(v, axis=1).max():4.1f}" for v, _ in evals_values])
                 all_means_ewma = f"{'ewma':4s}: " + ' '.join([f"{v[-1]:4.1f}" for v in ewma])
                 all_means_ewma_max = f"{'smax':4s}: " + ' '.join([f"{v.max():4.1f}" for v in ewma])
