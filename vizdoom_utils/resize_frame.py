@@ -1,6 +1,12 @@
 from typing import Callable
 
-import cv2
+# We don't really use resize now, so not really requiring cv2?
+try:
+    import cv2
+except:
+    cv2 = None
+    print("OpenCV not imported, if you don't resize frames, can safely ignore", flush=True)
+
 import numpy as np
 
 # import skimage.transform
