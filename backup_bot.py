@@ -19,7 +19,7 @@ models_per_row = 6
 # Custom filtering / formatting settings
 f_filter_path = lambda k: any(i in k for i in ['sl_ss', 's4_ppo_ss_rgb'])
 f_filter_model_names = lambda k: k
-f_name_model = lambda k: k.replace("_ss", '').replace("_rgb", '').replace("r_ppo_", '').replace("ppo_", '')
+f_name_model = lambda k: k.replace("_ss", '').replace("_rgb", '').replace("r_ppo_", '').replace("ppo_", '').replace("Dsl", 'SL').replace("Dsm", 'SM')
 
 # Initialize variables
 mem_usage = ''
@@ -98,6 +98,6 @@ if __name__ == "__main__":
 
         if also_check_memory_usage and counter >= memory_usage_check_freq:
             counter = 0
-            mem_usage = f"{psutil.virtual_memory().available / 1e9:.2f} GB available"
+            mem_usage = f"{psutil.virtual_memory().available / 1e9:6.2f} GB available"
         print(f"Last sent update: {update_time} (checked at {time.strftime('%H:%M:%S')}) {mem_usage}", end="\r")
         time.sleep(check_interval)

@@ -81,14 +81,94 @@ iqn_3 = dict(
     target_update_interval  = 2048,
 )
 
-rppo = dict(env_config={"n_updates" : 1})
+rppo = dict(
+    env_config={"n_updates" : 1}
+)
 
-rps = dict(env_config={"n_updates" : 1}, n_steps=2048, batch_size=64, 
-           policy_config={"lstm_hidden_size" : 64, "n_lstm_layers" : 1})
+small_lstm = {"lstm_hidden_size" : 64, "n_lstm_layers" : 1}
+medium_lstm = {"lstm_hidden_size" : 128, "n_lstm_layers" : 1}
+double_frag = dict(
+    factor_damage   = 0.02,
+    factor_frag     = 2,
+)
+
+rps = dict(
+    env_config={"n_updates" : 1}, 
+    n_steps=2048, 
+    batch_size=64, 
+    policy_config=small_lstm
+)
+
+rpsd = rps.copy()
+rpsd["env_config"] = dict(
+    n_updates = 1,
+    reward_tracker = double_frag
+)
+
+rpss = rps.copy()
+rpss["policy_config"] = {
+    **small_lstm, 
+    "shared_lstm" : True, 
+    "enable_critic_lstm" : False
+}
+
+rpssd = rpss.copy()
+rpssd["env_config"] = rpsd["env_config"]
 
 rpm = rps.copy()
-rpm.update(dict(env_config={"n_updates" : 1}, n_epochs=4, 
-                policy_config={"lstm_hidden_size" : 128, "n_lstm_layers" : 1}))
+rpm.update(dict(
+    env_config={"n_updates" : 1}, 
+    n_epochs=4, 
+    policy_config=medium_lstm
+))
+
+rps_ = dict(
+    env_config={"n_updates" : 1}, 
+    n_steps=2048, 
+    batch_size=64, 
+    n_epochs=4, 
+    clip_range=0.2, 
+    ent_coef=0.01, 
+    vf_coef=0.7, 
+    policy_config=small_lstm
+)
+
+rpm_ = rps_.copy()
+rpm_.update(dict(
+    ent_coef=0.02, 
+    vf_coef=0.9, 
+    clip_range=0.14, 
+    n_epochs=5, 
+    policy_config=medium_lstm
+))
+
+rps_s = rps_.copy()
+rps_s["policy_config"] = dict(
+    **small_lstm, 
+    shared_lstm=True, 
+    enable_critic_lstm=False
+)
+
+rpm_s = rpm_.copy()
+rpm_s["policy_config"] = dict(
+    **medium_lstm, 
+    shared_lstm=True, 
+    enable_critic_lstm=False
+)
+
+
+rpl = dict(
+    env_config={"n_updates" : 1}, 
+    n_steps=2048, 
+    batch_size=64, 
+    n_epochs=4,
+    policy_config={
+        "lstm_hidden_size" : 64, 
+        "n_lstm_layers" : 2, 
+        "shared_lstm" : True, 
+        "enable_critic_lstm" : False
+    }
+)
 
 st4 = dict(env_config={"n_updates" : 1, "frame_repeat" : 4}, batch_size=64, 
            policy_config={"net_arch" : dict(pi=[128, 128], vf=[128, 128])})
@@ -173,11 +253,51 @@ tasks = [
     # 34-35 Recurrent PPOs ( low lr): small model with lr=3e-4 and medium model with lr=1e-4
     (training_map, 3e-4, "sm_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 34
     (training_map, 1e-4, "md_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 35
-
-    # 36-37 PPO with framestacking (lr=1e-5)
-    (training_map, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 36
-    (training_map, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 37
     
+    # 36-37 Recurrent PPOs ( lower lr): small model with lr=1e-4
+    (training_map, 1e-4, "sm_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 36
+
+    (training_map, 1e-4, "lg_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None,  rpl),# 37
+    (training_map, 5e-5, "lg_ss_5e-5",     1, 4, 2050808,  1, "R_PPO", None,  rpl),# 38
+
+    # 39-40 PPO with framestacking (lr=1e-5)
+    (training_map, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 39
+    (training_map, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 40
+
+    (training_map, 5e-4, "sl_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 41
+    (training_map, 3e-4, "sl_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 42
+    (training_map, 1e-4, "sl_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 43
+
+    (training_map, 1e-3, "Dsm_ss_1e-3",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 44
+    (training_map, 5e-4, "Dsm_ss_5e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 45
+    (training_map, 3e-4, "Dsm_ss_3e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 46
+    (training_map, 1e-4, "Dsm_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 47
+    
+    (training_map, 1e-3, "Dsl_ss_1e-3",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 48
+    (training_map, 5e-4, "Dsl_ss_5e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 49
+    (training_map, 3e-4, "Dsl_ss_3e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 50
+    (training_map, 1e-4, "Dsl_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 51
+
+
+
+
+
+
+
+    # 44-47 Recurrent PPOs ( low lr)
+    (training_map, 3e-4, "s2_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rps_),# 44
+    (training_map, 1e-4, "m2_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None, rpm_),# 45
+    (training_map, 3e-4, "s3_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,rps_s),# 46
+    (training_map, 1e-4, "m3_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,rpm_s),# 47
+    (training_map, 5e-4, "sl_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 41
+    (training_map, 3e-4, "sl_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 42
+    (training_map, 1e-4, "sl_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 43
+
+    # 44-47 Recurrent PPOs ( low lr)
+    (training_map, 3e-4, "D_sm_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rps_),# 44
+    (training_map, 1e-4, "D_m2_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None, rpm_),# 45
+    (training_map, 3e-4, "D_s3_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,rps_s),# 46
+    (training_map, 1e-4, "D_m3_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,rpm_s),# 47
 ]
 
 if task_idx >= 0:
@@ -222,7 +342,7 @@ def main():
             "game_config"   : game_config,
             "frame_repeat"  : frame_repeat,
             "seed"          : seed,
-            "input_rep"     : input_rep
+            "input_rep"     : input_rep,
         }
 
         if "env_config" in model_config:
@@ -289,6 +409,8 @@ def main():
                 batch_size =  model_config.get("batch_size", 32)
 
                 model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps, batch_size=batch_size, 
+                            clip_range=model_config.get("clip_range", 0.2), 
+                            ent_coef=model_config.get("ent_coef", 0), vf_coef=model_config.get("vf_coef", 0.5), 
                             n_epochs=n_epochs, policy_kwargs=PPO_policy_kwargs, seed=seed)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
@@ -305,7 +427,9 @@ def main():
                 batch_size =  model_config.get("batch_size", 32)
 
                 model = RPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps,
-                                     batch_size=batch_size, n_epochs=n_epochs, policy_kwargs=RPPO_policy_kwargs, seed=seed)
+                             clip_range=model_config.get("clip_range", 0.2), 
+                             ent_coef=model_config.get("ent_coef", 0), vf_coef=model_config.get("vf_coef", 0.5), 
+                             batch_size=batch_size, n_epochs=n_epochs, policy_kwargs=RPPO_policy_kwargs, seed=seed)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "iqn":
