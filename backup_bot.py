@@ -17,9 +17,9 @@ glob_pattern = "logs/*/evaluations.npz"
 models_per_row = 6
 
 # Custom filtering / formatting settings
-f_filter_path = lambda k: any(i in k for i in ['r1_r_ppo_sm_ss_3e-4', 'r1_r_ppo_sm_ss_1e-4', 'r3_r_ppo_md_ss_3e-4', 'r3_r_ppo_md_ss_2e-4', 'r3_r_ppo_md_ss_4e-4', 's4_ppo'])
+f_filter_path = lambda k: any(i in k for i in ['sl_ss', 's4_ppo_ss_rgb'])
 f_filter_model_names = lambda k: k
-f_name_model = lambda k: k.replace("_ss", '').replace("r_ppo_", '').replace("ppo_", '')
+f_name_model = lambda k: k.replace("_ss", '').replace("_rgb", '').replace("r_ppo_", '').replace("ppo_", '')
 
 # Initialize variables
 mem_usage = ''

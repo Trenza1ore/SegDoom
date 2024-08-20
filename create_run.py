@@ -3,7 +3,7 @@ with open("run.py") as f:
 with open(f"run.bat", 'w') as f:
     f.write("cls\ncall activate doom\npython run.py\npause")
 
-for i in range(2, 21+1):
+for i in range(2, 51+1):
     with open(f"run{i}.py", 'w') as f:
         f.write(content.replace("task_idx = 0", f"task_idx = {i-1}"))
     with open(f"run{i}.bat", 'w') as f:
@@ -14,11 +14,11 @@ with open("collect.py") as f:
 with open(f"collect.bat", 'w') as f:
     f.write("cls\ncall activate doom\npython collect.py\npause")
 
-# for i in range(10, 28):
-#     with open(f"collect{i}.py", 'w') as f:
-#         f.write(content.replace("task_idx = 0", f"task_idx = {i-1}"))
-#     with open(f"collect{i}.bat", 'w') as f:
-#         f.write(f"cls\ncall activate doom\npython collect{i}.py\npause")
+for i in range(28, 39+1):
+    with open(f"collect{i}.py", 'w') as f:
+        f.write(content.replace("task_idx = 0", f"task_idx = {i-1}"))
+    with open(f"collect{i}.bat", 'w') as f:
+        f.write(f"cls\ncall activate doom\npython collect{i}.py\npause")
 
 # queue = list(range(16, 28))
 # n_workers = 4
