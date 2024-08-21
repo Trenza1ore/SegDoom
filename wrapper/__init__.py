@@ -203,6 +203,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         self.iou = []
         self.miou = []
         self.measure_miou = measure_miou
+
         if realtime_ss and input_rep in [1, 2]:
             import models.ss
             from semantic_segmentation.dataset import ToTensorNormalizeSingleImg
@@ -224,6 +225,12 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                     self.iou.append(models.ss.calculate_iou(output_array, semseg(state), num_classes=13))
                 return output_array
             self.semseg = realtime_ss
+        else:
+            if measure_miou:
+                print(f"Warning: measure_miou={measure_miou} has no effect since no real-time " + \
+                      f"semantic segmentation would take place (input_rep={input_rep})", flush=True)
+                self.measure_miou = False
+
         self.record_frame = lambda state, ss: np.dstack([state.screen_buffer, ss])
         match input_rep:
             case 1:
