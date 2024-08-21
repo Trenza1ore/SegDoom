@@ -220,6 +220,15 @@ tasks = [
     ("rtss_map2s"   , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
     ("rtss_map3"    , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
 
+    # 106-108
+    ("map1"         , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'final'),
+    ("map2s"        , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'final'),
+    ("map3"         , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'final'),
+
+    # 109-111
+    ("map1"         , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'best_model_23.0_115'),
+    ("map2s"        , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'best_model_23.0_115'),
+    ("map3"         , "s4_ppo_ss_rgb_5e-4", 1, 2050808, {}, 'best_model_23.0_115'),
 ]
 
 if task_idx >= 0:
