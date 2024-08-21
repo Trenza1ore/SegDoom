@@ -37,7 +37,7 @@ if True:
     queue = list(range(100, 105+1))
     n_workers = 3
     n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
-    i = 3
+    i = 0
     special = [] # list(range(72, 63, -1))
     while queue:
         current_jobs = [] + special

@@ -1,3 +1,21 @@
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+
+save_dir = "./logs"
+eps_to_eval = 400
+save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
+global_n_env_eval = 5       # number of venv (vectorized environment) to use by default
+global_n_env_eval_rtss = 16 # number of venv to use for real-time semantic segmentation
+env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
+# env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
+
+env_kwargs_template = {
+    "smooth_frame"  : False,
+    "n_updates"     : 1,
+    "frame_repeat"  : 4,
+    "only_pos"      : True,
+    "measure_miou"  : True,
+}
+
 tasks = [
     ("map1"         , "ss_rgb_3e-4",        2, 2050808, {}, ''),       # 1
     ("map1"         , "rgb_3e-4",           0, 2050808, {}, ''),       # 2

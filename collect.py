@@ -18,8 +18,9 @@ import scenarios
 from models import *
 from wrapper import *
 from vizdoom_utils import *
-from tasks_eval import tasks
 from models.training_procedure import *
+from tasks_eval import tasks, save_dir, eps_to_eval, save_batch_size, env_type
+from tasks_eval import global_n_env_eval, global_n_env_eval_rtss, env_kwargs_template
 
 # ============================== What is this ========================================
 # The program to collect gameplay footage/data/performance of evaluation sessions
@@ -28,14 +29,7 @@ from models.training_procedure import *
 # set this to -1 to execute all tasks in tasks list
 task_idx = 0
 
-# config
-save_dir = "./logs"
-eps_to_eval = 400
-save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
-global_n_env_eval = 5       # number of venv (vectorized environment) to use by default
-global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
-env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
-# env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
+# task-specific config (check tasks_eval.py for global configurations)
 record_pos = True
 
 default_env_config = scenarios.FrozenDict(n_updates=1, frame_repeat=4)
@@ -79,14 +73,6 @@ model_types = {
 # Tasks to perform
 if task_idx >= 0:
     tasks = tasks[task_idx:task_idx+1]
-
-env_kwargs_template = {
-    "smooth_frame"  : False,
-    "n_updates"     : 1,
-    "frame_repeat"  : 4,
-    "only_pos"      : record_pos,
-    "measure_miou"  : True,
-}
 
 def main():
     global tasks
