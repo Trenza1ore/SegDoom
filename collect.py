@@ -134,9 +134,9 @@ tasks = [
     ("map3"         , "ss_1e-3",            1, 2050808, {}, ''),       # 42
 
     # 43-45
-    ("map1"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 40
-    ("map2s"        , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 41
-    ("map3"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 42
+    ("map1"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 43
+    ("map2s"        , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 44
+    ("map3"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 45
 
     # 46-51
     ("map1"         , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
@@ -189,6 +189,37 @@ tasks = [
     ("map1"         , "rgb_9e-4",           1, 2050808, {}, ''),
     ("map2s"        , "rgb_9e-4",           1, 2050808, {}, ''),
     ("map3"         , "rgb_9e-4",           1, 2050808, {}, ''),
+
+    # 88-90
+    ("rtss_map1"    , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("rtss_map2s"   , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("rtss_map3"    , "rgb_9e-4",           1, 2050808, {}, ''),
+
+    # 91-93
+    ("rtss_map1"    , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+
+    # 94-96
+    ("rtss_map1"    , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+
+    # 97-99
+    ("rtss_map1"    , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+    ("rtss_map2s"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+    ("rtss_map3"    , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+
+    # 100-102
+    ("rtss_map1"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+
+    # 103-105
+    ("rtss_map1"    , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+
 ]
 
 if task_idx >= 0:
@@ -244,6 +275,7 @@ def main():
         n_env_eval = global_n_env_eval_rtss if "rtss" in save_name else global_n_env_eval
         if framestack:
             n_env_eval //= framestack
+        n_env_eval = max(1, n_env_eval)
         
         mem_size_est = additonal_config.get("memsize", None)
         if mem_size_est is None:

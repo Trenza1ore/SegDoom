@@ -175,6 +175,7 @@ record*.np[yz]
 *.pkl
 
 # For testing
+test/
 test*.ipynb
 test*.py
 fetch_*.py

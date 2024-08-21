@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, random_split
 import torchvision.transforms as transforms
 import torchvision.models.segmentation as models
 
-from semantic_segmentation.dataset import CustomDataset, ToTensorNormalize
+# from semantic_segmentation.dataset import CustomDataset, ToTensorNormalize
 
 def calculate_iou(pred, target, num_classes):
     ious = []
@@ -65,3 +65,6 @@ def init_res101(checkpoint: str | dict = "./semantic_segmentation/resnet101/ss_r
             print("Initialized one copy of res101", flush=True)
 
     return res101
+
+if __name__ == "__main__":
+    init_res101("./semantic_segmentation/resnet101/ss_resnet101_18.pt")

@@ -2,6 +2,8 @@ import os
 import sys
 import glob
 
+import clean_up
+
 iswin = False
 comment = "REM -------new run-------" if iswin else ''
 header = "cls\ncall activate doom" if iswin else "clear\n"
@@ -24,14 +26,14 @@ with open("collect.py") as f:
 # with open(f"collect.{script_ext}", 'w') as f:
 #     f.write(f"{header}\npython collect.py\npause")
 
-for i in range(73, 87+1):
+for i in range(88, 105+1):
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
     # with open(f"collect{i}.{script_ext}", 'w') as f:
     #     f.write(f"{header}\npython collect{i}.py\npause")
 
-queue = list(range(73, 87+1))
-n_workers = 4
+queue = list(range(88, 105+1))
+n_workers = 3
 n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
 i = 0
 special = [] # list(range(72, 63, -1))
