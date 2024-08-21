@@ -169,7 +169,7 @@ TEXTMAP*.txt
 # Saved data
 *.pt
 *.pth
-# *.npy
+record*.np[yz]
 # *.npz
 *.zip
 *.pkl
@@ -188,10 +188,10 @@ models/PER_SB3.py
 *.mp4
 *.html
 
-# Temporary files, equivalent to (?:(?:run)|(?:plt)|(?:collect))[0-9]+.(?:(?:py)|(?:bat))
-run?*.[bp][ay]*
-plt?*.[bp][ay]*
-collect?*.[bp][ay]*
+# Temporary files, equivalent to (?:(?:run)|(?:plt)|(?:collect))[0-9]+.(?:(?:py)|(?:sh)|(?:bat))
+run?*.[bsp][ahy]*
+plt?*.[bsp][ahy]*
+collect?*.[bsp][ahy]*
 
 
 logs/*/*[fm][io][nd][ae]l*

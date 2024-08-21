@@ -4,7 +4,9 @@ import concurrent.futures
 
 import numpy as np
 import vizdoom as vzd
-from tqdm import trange
+from tqdm.rich import trange
+
+from scenarios import maps
 from vizdoom_utils import create_game
 
 # ============================== What is this ========================================
@@ -13,18 +15,9 @@ from vizdoom_utils import create_game
 
 # config
 res = (160, 120)
-n_episodes = 2_00
+n_episodes = 4_000
 map_to_play = "map1"
 game_seed = 2050808
-
-# Deathmatch Scenarios
-maps = {
-    "map1"  : os.path.join(vzd.scenarios_path, "deathmatch_simple.cfg"),
-    "map1a" : os.path.join(vzd.scenarios_path, "bots_deathmatch_1_alt.cfg"),
-    "map2"  : os.path.join(vzd.scenarios_path, "bots_deathmatch_2.cfg"),
-    "map2s" : os.path.join(vzd.scenarios_path, "bots_deathmatch_2_shotgun.cfg"),
-    "map3"  : os.path.join(vzd.scenarios_path, "bots_deathmatch_3.cfg"),
-}
 
 add_args = " ".join([
     "-host 1",
@@ -42,7 +35,7 @@ add_args = " ".join([
     "+sv_noexit 1"
 ])
 # "map1", "map2", "map2s", 
-for map_to_play in ["map3"]:
+for map_to_play in ["map3", "map2s", "map1"]:
     game = create_game(maps[map_to_play], color=False, depth=False, label=True, res=res, visibility=False, add_args=add_args)
     game.set_seed(game_seed)
     print(f"Evaluating {map_to_play} ({maps[map_to_play]})", flush=True)
@@ -63,10 +56,10 @@ for map_to_play in ["map3"]:
         game.new_episode()
         if i % 10 is 0:
             d = data[:i+1]
-            t.set_description(f"{np.mean(d):5.2f} | min: {np.min(d):2d} | Q1: {int(np.percentile(d, 25)):2d} | Q2: {int(np.percentile(d, 50)):2d} | Q3: {int(np.percentile(d, 75)):2d} | max: {np.max(d):2d} |")
+            t.set_description(f"{np.mean(d):5.2f}")# | min: {np.min(d):2d} | Q1: {int(np.percentile(d, 25)):2d} | Q2: {int(np.percentile(d, 50)):2d} | Q3: {int(np.percentile(d, 75)):2d} | max: {np.max(d):2d} |")
 
     data = np.asarray(data, dtype=np.int64)
     print(f"\n{data.mean():.3f} +/- {data.std():.3f}\nmin: {int(data.min()):2d} | max: {int(data.max()):2d}\nQ1: {int(np.percentile(data, 25)):2d} | Q2: {int(np.percentile(data, 50)):2d} | Q3: {int(np.percentile(data, 75)):2d}")
-    if not os.path.exists(f"logs/{map_to_play}_bot"):
-        os.makedirs(f"logs/{map_to_play}_bot")
-    np.save(f"logs/{map_to_play}_bot/performance.npy", data)
+    if not os.path.exists(f"logs/{map_to_play}/bot"):
+        os.makedirs(f"logs/{map_to_play}/bot")
+    np.save(f"logs/{map_to_play}/bot/performance.npy", data)

@@ -31,7 +31,7 @@ task_idx = 0
 save_dir = "./logs"
 eps_to_eval = 400
 save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
-global_n_env_eval = 8       # number of venv (vectorized environment) to use by default
+global_n_env_eval = 5       # number of venv (vectorized environment) to use by default
 global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing, DummyVecEnv 
 # env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
@@ -173,6 +173,22 @@ tasks = [
     ("map2s"        , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_21.0_106'),
     ("map3"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_21.0_106'),
 
+    # 73-87
+    ("map1"         , "rgb_1e-3",           1, 2050808, {}, ''),
+    ("map2s"        , "rgb_1e-3",           1, 2050808, {}, ''),
+    ("map3"         , "rgb_1e-3",           1, 2050808, {}, ''),
+    ("map1"         , "rgb_1e-4",           1, 2050808, {}, ''),
+    ("map2s"        , "rgb_1e-4",           1, 2050808, {}, ''),
+    ("map3"         , "rgb_1e-4",           1, 2050808, {}, ''),
+    ("map1"         , "rgb_1e-5",           1, 2050808, {}, ''),
+    ("map2s"        , "rgb_1e-5",           1, 2050808, {}, ''),
+    ("map3"         , "rgb_1e-5",           1, 2050808, {}, ''),
+    ("map1"         , "rgb_3e-4",           1, 2050808, {}, ''),
+    ("map2s"        , "rgb_3e-4",           1, 2050808, {}, ''),
+    ("map3"         , "rgb_3e-4",           1, 2050808, {}, ''),
+    ("map1"         , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("map2s"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("map3"         , "rgb_9e-4",           1, 2050808, {}, ''),
 ]
 
 if task_idx >= 0:

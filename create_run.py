@@ -11,7 +11,7 @@ script_ext = "bat" if iswin else "sh"
 with open("run.py") as f:
     content = f.read()
 with open(f"run.{script_ext}", 'w') as f:
-    f.write("{header}\npython run.py\npause")
+    f.write("f{header}\npython run.py\npause")
 
 # for i in range(39,40):
 #     with open(f"run{i}.py", 'w') as f:
@@ -22,19 +22,19 @@ with open(f"run.{script_ext}", 'w') as f:
 with open("collect.py") as f:
     content = f.read()
 # with open(f"collect.{script_ext}", 'w') as f:
-#     f.write("{header}\npython collect.py\npause")
+#     f.write(f"{header}\npython collect.py\npause")
 
-for i in range(40, 72+1):
+for i in range(73, 87+1):
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
     # with open(f"collect{i}.{script_ext}", 'w') as f:
     #     f.write(f"{header}\npython collect{i}.py\npause")
 
-queue = list(range(40, 63+1))
+queue = list(range(73, 87+1))
 n_workers = 4
 n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
 i = 0
-special = list(range(72, 63, -1))
+special = [] # list(range(72, 63, -1))
 while queue:
     current_jobs = [] + special
     special.clear()
