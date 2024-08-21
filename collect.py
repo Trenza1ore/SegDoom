@@ -163,15 +163,15 @@ tasks = [
     ("map3"         , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'best_model_25.0_121'),
 
     # 64-72
-    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
-    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
-    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
-    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
-    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
-    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
-    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
-    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
-    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
+    ("map1"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+    ("map2s"        , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+    ("map3"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'final'),
+    ("map1"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map2s"        , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map3"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map1"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_21.0_106'),
+    ("map2s"        , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_21.0_106'),
+    ("map3"         , "s4_ppo_ss_5e-4",     1, 2050808, {}, 'best_model_21.0_106'),
 
 ]
 

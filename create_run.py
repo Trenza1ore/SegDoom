@@ -5,6 +5,7 @@ import glob
 iswin = False
 comment = "REM -------new run-------" if iswin else ''
 header = "cls\ncall activate doom" if iswin else "clear\n"
+tail = "pause" if iswin else ''
 script_ext = "bat" if iswin else "sh"
 
 with open("run.py") as f:
@@ -23,7 +24,7 @@ with open("collect.py") as f:
 # with open(f"collect.{script_ext}", 'w') as f:
 #     f.write("{header}\npython collect.py\npause")
 
-for i in range(40, 63+1):
+for i in range(40, 72+1):
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
     # with open(f"collect{i}.{script_ext}", 'w') as f:
@@ -33,8 +34,10 @@ queue = list(range(40, 63+1))
 n_workers = 4
 n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
 i = 0
+special = list(range(72, 63, -1))
 while queue:
-    current_jobs = []
+    current_jobs = [] + special
+    special.clear()
     for _ in [0] * n_jobs_per_worker:
         if queue:
             current_jobs.append(queue.pop())
@@ -52,3 +55,8 @@ while queue:
 # for i in [2, 3, 4]:
 #     with open(f"plt{i}.{script_ext}", 'w') as f:
 #         f.write(f"\ncls\npython logs/savefig{i}.py\npause")
+
+'''
+conda activate doombot
+collect_batch
+'''
