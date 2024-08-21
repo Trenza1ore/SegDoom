@@ -4,7 +4,7 @@ import glob
 
 import clean_up
 
-iswin = False
+iswin = sys.platform.startswith("win")
 comment = "REM -------new run-------" if iswin else ''
 header = "cls\ncall activate doom" if iswin else "clear\n"
 tail = "pause" if iswin else ''
