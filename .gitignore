@@ -151,16 +151,21 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-
+# Not related to project
 doc/
 reference/
 history&backup/
+
+# Just some logs and temporary plots
 plots/
 history/
+dm*/
 
+# VS Code stuffs
 .vs/
 .vscode/
 
+# ViZDoom-related files
 doom.wad
 doom.wad.bak
 _vizdoom.ini
@@ -184,7 +189,7 @@ fetch_*.py
 models/PER_SB3.py
 
 # Recorded media
-*.gif
+# *.gif
 *.png
 *.mp4
 *.html
@@ -194,12 +199,17 @@ run?*.[bsp][ahy]*
 plt?*.[bsp][ahy]*
 collect?*.[bsp][ahy]*
 savefig*.[bsp][ahy]*
-
-scores.npy
 run.bat
+
+# Testing-related stuffs
+scores.npy
 FFmpeg*.bat
 
+# Various experiments-related stuffs
+logs/*back*/
+logs/*eval*/
 logs/*/*[fm][io][nd][ae]l*
-logs/*back*
-logs/*eval*
+semantic_segmentation/resnet101_?*e-*/
+
+# Webhook configuration
 webhook.config
