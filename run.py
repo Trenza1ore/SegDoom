@@ -239,66 +239,49 @@ tasks = [
     (training_map, 1e-3, "rgb_1e-3",       0, 4, 2050808,  8, "R_PPO", None, rppo),# 26
     (training_map, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  8, "R_PPO", None, rppo),# 27
     
-    # 28-29 Recurrent PPOs (high lr): small model with lr=1e-3 and medium model with lr=5e-4
+    # 28-29 Recurrent PPOs ( high lr): small model with lr=1e-3 and medium model with lr=5e-4
     (training_map, 1e-3, "sm_ss_1e-3",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 28
     (training_map, 5e-4, "md_ss_5e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 29
 
-    # 30-31 PPO with framestacking (lr=1e-3)
+    # 30-31 PPO (SS-only) with framestacking (lr = [1e-3, 5e-4])
     (training_map, 1e-3, "ss_1e-3",        1, 4, 2050808,  4,   "PPO", None,  st4),# 30
     (training_map, 5e-4, "ss_5e-4",        1, 4, 2050808,  4,   "PPO", None,  st4),# 31
 
-    # 32-33 Recurrent PPOs ( mid lr): small model with lr=5e-4 and medium model with lr=3e-4
+    # 32-33 Recurrent PPOs (   mid lr): small model with lr=5e-4 and medium model with lr=3e-4
     (training_map, 5e-4, "sm_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 32
     (training_map, 3e-4, "md_ss_3e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 33
 
-    # 34-35 Recurrent PPOs ( low lr): small model with lr=3e-4 and medium model with lr=1e-4
+    # 34-35 Recurrent PPOs (   low lr): small model with lr=3e-4 and medium model with lr=1e-4
     (training_map, 3e-4, "sm_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 34
     (training_map, 1e-4, "md_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,  rpm),# 35
     
-    # 36-37 Recurrent PPOs ( lower lr): small model with lr=1e-4
+    # 36 Recurrent PPO (even lower lr): small model with lr=1e-4
     (training_map, 1e-4, "sm_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None,  rps),# 36
 
+    # 37-38 some other PPO setups
     (training_map, 1e-4, "lg_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None,  rpl),# 37
     (training_map, 5e-5, "lg_ss_5e-5",     1, 4, 2050808,  1, "R_PPO", None,  rpl),# 38
 
-    # 39-40 PPO with framestacking (lr=1e-5)
+    # 39-40 PPO (SS+RGB) with framestacking (lr = [1e-3, 5e-4])
     (training_map, 1e-3, "ss_rgb_1e-3",    2, 4, 2050808,  4,   "PPO", None,  st4),# 39
     (training_map, 5e-4, "ss_rgb_5e-4",    2, 4, 2050808,  4,   "PPO", None,  st4),# 40
 
+    # 41-43 Recurrent PPO: small model with shared LSTM
     (training_map, 5e-4, "sl_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 41
     (training_map, 3e-4, "sl_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 42
     (training_map, 1e-4, "sl_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 43
 
+    # 44-47 Recurrent PPO: small model with separate LSTMs and doubled frag/damage reward
     (training_map, 1e-3, "Dsm_ss_1e-3",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 44
     (training_map, 5e-4, "Dsm_ss_5e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 45
     (training_map, 3e-4, "Dsm_ss_3e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 46
     (training_map, 1e-4, "Dsm_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None, rpsd),# 47
     
+    # 48-51 Recurrent PPO: small model with shared LSTM and doubled frag/damage reward
     (training_map, 1e-3, "Dsl_ss_1e-3",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 48
     (training_map, 5e-4, "Dsl_ss_5e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 49
     (training_map, 3e-4, "Dsl_ss_3e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 50
     (training_map, 1e-4, "Dsl_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 51
-
-
-
-
-
-
-
-    # 44-47 Recurrent PPOs ( low lr)
-    (training_map, 3e-4, "s2_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rps_),# 44
-    (training_map, 1e-4, "m2_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None, rpm_),# 45
-    (training_map, 3e-4, "s3_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,rps_s),# 46
-    (training_map, 1e-4, "m3_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,rpm_s),# 47
-    (training_map, 5e-4, "sl_ss_5e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 41
-    (training_map, 3e-4, "sl_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 42
-    (training_map, 1e-4, "sl_ss_1e-4",     1, 4, 2050808,  1, "R_PPO", None, rpss),# 43
-
-    # 44-47 Recurrent PPOs ( low lr)
-    (training_map, 3e-4, "D_sm_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None, rps_),# 44
-    (training_map, 1e-4, "D_m2_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None, rpm_),# 45
-    (training_map, 3e-4, "D_s3_ss_3e-4",     1, 4, 2050808,  1, "R_PPO", None,rps_s),# 46
-    (training_map, 1e-4, "D_m3_ss_1e-4",     1, 4, 2050808,  3, "R_PPO", None,rpm_s),# 47
 ]
 
 if task_idx >= 0:
