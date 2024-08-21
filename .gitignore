@@ -189,12 +189,17 @@ models/PER_SB3.py
 *.mp4
 *.html
 
-# Temporary files, equivalent to (?:(?:run)|(?:plt)|(?:collect))[0-9]+.(?:(?:py)|(?:sh)|(?:bat))
+# Temporary files, loosely equivalent to (?:(?:run)|(?:plt)|(?:collect)|(?:savefig))[0-9]+.(?:(?:py)|(?:sh)|(?:bat))
 run?*.[bsp][ahy]*
 plt?*.[bsp][ahy]*
 collect?*.[bsp][ahy]*
+savefig*.[bsp][ahy]*
 
+scores.npy
+run.bat
+FFmpeg*.bat
 
 logs/*/*[fm][io][nd][ae]l*
-logs/backup
+logs/*back*
+logs/*eval*
 webhook.config

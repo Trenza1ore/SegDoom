@@ -85,6 +85,7 @@ env_kwargs_template = {
     "n_updates"     : 1,
     "frame_repeat"  : 4,
     "only_pos"      : record_pos,
+    "measure_miou"  : True,
 }
 
 def main():
