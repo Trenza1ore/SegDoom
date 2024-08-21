@@ -1,7 +1,7 @@
 # Doom-playing AI via Deep Reinforcement Learning with Semantic Segmentation
 
 **An Informatics MSc Project at University of Edinburgh**
-
+[![Video Demo](https://img.youtube.com/vi/jvm07Gt9nU0/hqdefault.jpg)](https://youtu.be/jvm07Gt9nU0)
 #### Functionality of scripts in project's root directory:
 - **run.py -** runs the training session
 - **collect.py -** collects data from evalution episodes (game frames, position, etc.)
@@ -9,6 +9,7 @@
 - **tba**
 ---
 # All deprecated information, update in progress...
+![](test_resnet101.gif) ![](test_mobilenetv3.gif)
 ---
 Utilizing DQN, DRQN and Prioritized Experience Replay to train an agent for playing Doom. 
 Scenarios tested: 

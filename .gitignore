@@ -190,6 +190,7 @@ models/PER_SB3.py
 
 # Recorded media
 # *.gif
+logs/**/*.gif
 *.png
 *.mp4
 *.html
