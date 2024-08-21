@@ -29,12 +29,13 @@ task_idx = 0
 
 # config
 save_dir = "./logs"
-eps_to_eval = 200
+eps_to_eval = 400
 save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
-global_n_env_eval = 40      # number of venv (vectorized environment) to use by default
+global_n_env_eval = 8       # number of venv (vectorized environment) to use by default
 global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing, DummyVecEnv 
 # env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
+record_pos = True
 
 default_env_config = scenarios.FrozenDict(n_updates=1, frame_repeat=4)
 
@@ -126,6 +127,52 @@ tasks = [
     ("rtss_map2s"   , "stack_ppo_ss_1e-3",  1, 2050808, {}, 'final'),  # 37
     ("map3"         , "stack_ppo_ss_1e-3",  1, 2050808, {}, 'final'),  # 38
     ("rtss_map3"    , "stack_ppo_ss_1e-3",  1, 2050808, {}, 'final'),  # 39
+
+    # 40-42
+    ("map1"         , "ss_1e-3",            1, 2050808, {}, ''),       # 40
+    ("map2s"        , "ss_1e-3",            1, 2050808, {}, ''),       # 41
+    ("map3"         , "ss_1e-3",            1, 2050808, {}, ''),       # 42
+
+    # 43-45
+    ("map1"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 40
+    ("map2s"        , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 41
+    ("map3"         , "ss_rgb_1e-3",        1, 2050808, {}, ''),       # 42
+
+    # 46-51
+    ("map1"         , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+    ("map2s"        , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+    ("map3"         , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
+    ("map1"         , "ppo_ss_1e-3",        1, 2050808, {}, 'best_model_20'),
+    ("map2s"        , "ppo_ss_1e-3",        1, 2050808, {}, 'best_model_20'),
+    ("map3"         , "ppo_ss_1e-3",        1, 2050808, {}, 'best_model_20'),
+
+    # 52-57
+    ("map1"         , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+    ("map2s"        , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+    ("map3"         , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'final'),
+    ("map1"         , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best_model_26'),
+    ("map2s"        , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best_model_26'),
+    ("map3"         , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best_model_26'),
+
+    # 58-63
+    ("map1"         , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("map2s"        , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("map3"         , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("map1"         , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'best_model_25.0_121'),
+    ("map2s"        , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'best_model_25.0_121'),
+    ("map3"         , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'best_model_25.0_121'),
+
+    # 64-72
+    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
+    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
+    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'final'),
+    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_20.0_108'),
+    ("map1"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
+    ("map2s"        , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
+    ("map3"         , "s4_ppo_ss_5e-3",     1, 2050808, {}, 'best_model_21.0_106'),
+
 ]
 
 if task_idx >= 0:
@@ -134,9 +181,10 @@ if task_idx >= 0:
 # tasks = [("rtss_map2s"   , "ss_rgb_1e-3",       2, 2050808)]
 
 env_kwargs_template = {
-    "smooth_frame"  : True,
+    "smooth_frame"  : False,
+    "n_updates"     : 1,
     "frame_repeat"  : 4,
-    "only_pos"      : True,
+    "only_pos"      : record_pos,
 }
 
 def main():
@@ -152,12 +200,15 @@ def main():
             if framestack_str is not None and int(framestack_str) > 1:
                 framestack = int(framestack_str)
             if input_rep_str is not None:
-                input_rep = input_rep_str
+                input_rep = scenarios.input_definitions[input_rep_str]
 
-        save_name = f"{config}_{name}"
-        ch_num = scenarios.input_rep_ch_num[input_rep]
+        path_has_decimal = model_path.find(".0")
+        model_path[:path_has_decimal] if path_has_decimal > 0 else model_path
+        save_name = f"{config}/{name}_{model_path}"
+        ch_num = scenarios.input_definitions[input_rep]
         if framestack:
             ch_num *= framestack
+        # print(ch_num, '|', framestack, '|', framestack_str, '|', input_rep, '|', input_rep_str)
         game_config = dict(config_path=scenarios.maps[config], color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
 
         game = create_game(**game_config)
@@ -175,6 +226,8 @@ def main():
         eval_callback = lambda locals_dict, _: (scores.append(locals_dict['info']['r']), p.update()) if locals_dict['done'] else None
 
         n_env_eval = global_n_env_eval_rtss if "rtss" in save_name else global_n_env_eval
+        if framestack:
+            n_env_eval //= framestack
         
         mem_size_est = additonal_config.get("memsize", None)
         if mem_size_est is None:
@@ -214,10 +267,12 @@ def main():
             DoomBotDeathMatchCapture, n_envs=n_env_eval, seed=seed, env_kwargs=eval_env_kwargs, vec_env_cls=env_type)
 
         if model_path:
-            if not os.path.exists(model_path):
+            if not os.path.exists(f"{save_dir}/{name}/{model_path}"):
                 model_path = f"{model_path}.zip"
         else:
             model_path = "best_model.zip"
+            if not os.path.exists(f"{save_dir}/{name}/{model_path}"):
+                model_path = "final.zip"
 
 
         mem = psutil.virtual_memory().available / 1e9
@@ -241,9 +296,10 @@ def main():
             
         mem_after_model_alloc = psutil.virtual_memory().available / 1e9
         prob_alloc = mem - mem_after_model_alloc
-        print(f"{mem_after_model_alloc:.2f} GB available, model probably occupied {prob_alloc:.2f} GB", flush=True)
+        print(f"{mem_after_model_alloc:.2f} GB available, model probably occupied {prob_alloc:.2f} GB")
+        print(f"Number of available buttons: {n} | Size of action space: {len(act_actions)}")
+        print(f"Input shape: {env_kwargs['input_shape']}", flush=True)
 
-        print(f"Number of available buttons: {n} | Size of action space: {len(act_actions)}", flush=True)
         p.update(0)
         scores = []
         evaluate_policy(model, eval_env, eps_to_eval, callback=eval_callback)

@@ -195,4 +195,5 @@ collect?*.[bp][ay]*
 
 
 logs/*/*[fm][io][nd][ae]l*
+logs/backup
 webhook.config

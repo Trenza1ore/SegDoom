@@ -253,7 +253,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
     
     def step_no_skip(self, action_id: int):
-        latest_state_to_add = None
+        latest_state_to_add = []
         for t in self.update_iter:
             self.game.make_action(self.actions[action_id], self.frame_repeat)
             terminated = self.game.is_episode_finished()
@@ -281,7 +281,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         self.reward_tracker.update()
 
         # Only memorize last state to match ViZDoom frame repeat behavior
-        if not self.smooth_frame:
+        if not self.smooth_frame and latest_state_to_add:
             self.memory.add(*latest_state_to_add)
         
         if self.frame_stack:
@@ -312,9 +312,9 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             self.memory.add(frame_save, state.game_variables[1], 0, state.game_variables[-3:])
 
         if self.frame_stack:
-            observation = np.repeat(observation, self.buffer_size, axis=0)
             self.frame_buffer.clear()
             self.frame_buffer.extend([observation] * self.buffer_size)
+            observation = np.repeat(observation, self.buffer_size, axis=0)
 
         return observation, info
     

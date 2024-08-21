@@ -318,7 +318,7 @@ def main():
 
         if framestack < 0:
             framestack = global_framestack
-        ch_num = scenarios.input_rep_ch_num[input_rep]
+        ch_num = scenarios.input_definitions[input_rep]
         if framestack:
             ch_num *= framestack
         game_config = dict(config_path=config, color=True, label=True, res=(256, 144), visibility=False, add_args=bot_args)
@@ -470,7 +470,7 @@ def main():
 
                     warmup_env_kwargs = eval_env_kwargs.copy()
                     warmup_input_rep = 2
-                    warmup_env_kwargs["input_shape"] = (scenarios.input_rep_ch_num[warmup_input_rep], 144, 256)
+                    warmup_env_kwargs["input_shape"] = (scenarios.input_definitions[warmup_input_rep], 144, 256)
                     warmup_env_kwargs["input_rep"] = warmup_input_rep
                     env = make_vec_env(DoomBotDeathMatch, n_envs=warmup_n_envs, seed=seed, env_kwargs=warmup_env_kwargs, vec_env_cls=env_type)
 

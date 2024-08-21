@@ -39,7 +39,7 @@ for k in list(maps.keys()):
 del k
 
 # Definition for model input's representations
-input_rep_ch_num = {
+input_definitions = {
     0   : 3,    # type 0: 3-channel RGB , coloured game frame
     1   : 1,    # type 1: 1-channel S   , ss (semantic segmentation) mask
     2   : 4,    # type 2: 4-channel RGBS, coloured game frame + ss mask
@@ -47,12 +47,12 @@ input_rep_ch_num = {
 }
 
 # Add in string alias for input representation
-for i, repr_str in enumerate(["rgb", "ss", "ss_sgb", "srgb"]):
-    input_rep_ch_num[repr_str] = input_rep_ch_num[i]
+for i, repr_str in enumerate(["rgb", "ss", "ss_rgb", "srgb"]):
+    input_definitions[repr_str] = i
 
 # Make them immutable
 maps = FrozenDict(maps)
-input_rep_ch_num = FrozenDict(input_rep_ch_num)
+input_definitions = FrozenDict(input_definitions)
 
 if __name__ == "__main__":
     try:
