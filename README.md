@@ -1,7 +1,7 @@
 # Doom-playing AI via Deep Reinforcement Learning with Semantic Segmentation
 
 **An Informatics MSc Project at University of Edinburgh**
-[![Video Demo](https://img.youtube.com/vi/jvm07Gt9nU0/hqdefault.jpg)](https://youtu.be/jvm07Gt9nU0)
+![ss+rgb_rgb](rtss_map1_ep5_rgb.gif)![ss+rgb_rgb](rtss_map1_ep5_ss.gif)
 #### Functionality of scripts in project's root directory:
 - **run.py -** runs the training session
 - **collect.py -** collects data from evalution episodes (game frames, position, etc.)
