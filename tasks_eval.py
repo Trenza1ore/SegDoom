@@ -6,7 +6,7 @@ save_dir = "./logs"
 eps_to_eval = 400
 save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
 global_n_env_eval = 20      # number of venv (vectorized environment) to use by default
-global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
+global_n_env_eval_rtss = 5  # number of venv to use for real-time semantic segmentation
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
 # env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
 
@@ -206,5 +206,11 @@ tasks = [
     ("rtss_map1"    ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
     ("rtss_map2s"   ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
     ("rtss_map3"    ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+
+    # 130-133
+    ("map1a"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("map1a"        , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+    ("map1w"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("map1w"        , "ppo_ss_1e-3",        1, 2050808, {}, 'final'),
 
 ]

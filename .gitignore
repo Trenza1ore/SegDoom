@@ -195,14 +195,17 @@ logs/**/*.gif
 *.mp4
 *.html
 
-# Temporary files, loosely equivalent to (?:(?:run)|(?:plt)|(?:collect)|(?:savefig))[0-9]+.(?:(?:py)|(?:sh)|(?:bat))
+# Temporary files, loosely equivalent to this regex:
+# (?:(?:run)|(?:plt)|(?:collect)|(?:savefig)|(?:train_model)|(?:eval_model)).+\.(?:(?:py)|(?:sh)|(?:bat))
 run?*.[bsp][ahy]*
 plt?*.[bsp][ahy]*
 collect?*.[bsp][ahy]*
-savefig*.[bsp][ahy]*
-run.bat
+train_model?*.[bsp][ahy]*
+eval_model?*.[bsp][ahy]*
+savefig?*.[bsp][ahy]*
 
 # Testing-related stuffs
+savefig.py
 scores.npy
 FFmpeg*.bat
 
