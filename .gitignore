@@ -174,7 +174,7 @@ TEXTMAP*.txt
 # Saved data
 *.pt
 *.pth
-record*.np[yz]
+logs/*/record*.np[yz]
 # *.npz
 *.zip
 *.pkl
