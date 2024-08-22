@@ -4,7 +4,7 @@
 
 ![ss+rgb_ss](rtss_map1_ep5_ss.gif)
 
-<iframe src="https://player.vimeo.com/video/1001631068?title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" width="256" height="288" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" title="PPO(1, RGB+SS) on trained map"></iframe>
+<video src="https://vimeo.com/1001631068" width=256/>
 
 #### Functionality of scripts in project's root directory:
 - **run.py -** runs the training session
