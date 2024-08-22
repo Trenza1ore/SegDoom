@@ -4,7 +4,7 @@
 
 ![ss+rgb_ss](rtss_map1_ep5_ss.gif)
 
-<video src="https://vimeo.com/1001631068" width=256/>
+<video src="https://vimeo.com/1001631068" width=256/></video>
 
 #### Functionality of scripts in project's root directory:
 - **run.py -** runs the training session
