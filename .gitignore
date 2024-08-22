@@ -212,5 +212,8 @@ logs/*eval*/
 logs/*/*[fm][io][nd][ae]l*
 semantic_segmentation/resnet101_?*e-*/
 
+# I'm an idiot, RGB-only model has no need for this
+logs/rtss_*/rgb*/
+
 # Webhook configuration
 webhook.config

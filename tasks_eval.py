@@ -1,3 +1,5 @@
+import sys
+
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 
 save_dir = "./logs"
@@ -7,6 +9,10 @@ global_n_env_eval = 5       # number of venv (vectorized environment) to use by 
 global_n_env_eval_rtss = 16 # number of venv to use for real-time semantic segmentation
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
 # env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
+
+# My Ubuntu machine has less RAM & VRAM
+if sys.platform.startswith("linux"):
+    global_n_env_eval_rtss = 4
 
 env_kwargs_template = {
     "smooth_frame"  : False,
@@ -130,7 +136,7 @@ tasks = [
     ("map2s"        , "rgb_9e-4",           1, 2050808, {}, ''),
     ("map3"         , "rgb_9e-4",           1, 2050808, {}, ''),
 
-    # 88-90
+    # 88-90 (I'm an idiot, this is meaningless)
     ("rtss_map1"    , "rgb_9e-4",           1, 2050808, {}, ''),
     ("rtss_map2s"   , "rgb_9e-4",           1, 2050808, {}, ''),
     ("rtss_map3"    , "rgb_9e-4",           1, 2050808, {}, ''),
