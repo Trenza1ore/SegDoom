@@ -26,8 +26,8 @@ with open("collect.py") as f:
 # with open(f"collect.{script_ext}", 'w') as f:
 #     f.write(f"{header}\npython collect.py\npause")
 
-eval_range = list(range(106, 117+1))
-
+# eval_range = list(range(106, 117+1))
+eval_range = list(range(94, 96+1))
 for i in eval_range:
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
@@ -35,7 +35,7 @@ for i in eval_range:
         with open(f"collect{i}.{script_ext}", 'w') as f:
             f.write(f"{header}\npython collect{i}.py\npause")
 
-if True:
+if False:
     queue = eval_range
     n_workers = 4
     n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
