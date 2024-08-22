@@ -26,7 +26,9 @@ with open("collect.py") as f:
 # with open(f"collect.{script_ext}", 'w') as f:
 #     f.write(f"{header}\npython collect.py\npause")
 
-for i in range(118, 123+1):
+eval_range = list(range(106, 117+1))
+
+for i in eval_range:
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
     if iswin:
@@ -34,8 +36,8 @@ for i in range(118, 123+1):
             f.write(f"{header}\npython collect{i}.py\npause")
 
 if True:
-    queue = list(range(118, 123+1))
-    n_workers = 3
+    queue = eval_range
+    n_workers = 4
     n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
     i = 0
     special = [] # list(range(72, 63, -1))
