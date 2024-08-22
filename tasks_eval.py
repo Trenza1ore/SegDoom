@@ -197,4 +197,14 @@ tasks = [
     ("map2s"        ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
     ("map3"         ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
 
+    # 124-126
+    ("rtss_map1"    , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+
+    # 127-129
+    ("rtss_map1"    ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("rtss_map2s"   ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("rtss_map3"    ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+
 ]
