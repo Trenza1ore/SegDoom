@@ -208,12 +208,14 @@ FFmpeg*.bat
 
 # Various experiments-related stuffs
 logs/*back*/
-logs/*eval*/
-logs/*/*[fm][io][nd][ae]l*
+logs/eval*/
+# logs/*/*[fm][io][nd][ae]l*
+logs/*/best_model*
+logs/*map*/*best_model*/
 semantic_segmentation/resnet101_?*e-*/
 
 # I'm an idiot, RGB-only model has no need for this
-logs/rtss_*/rgb*/
+# logs/rtss_*/rgb*/
 
 # Webhook configuration
 webhook.config

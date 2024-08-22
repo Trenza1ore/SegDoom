@@ -1,5 +1,6 @@
 from time import time
 
+import torch
 from gymnasium import Env
 import matplotlib.pyplot as plt
 from stable_baselines3.common.callbacks import *
@@ -19,6 +20,7 @@ class EvalCallbackWithWebhook(EvalCallback):
         super().__init__(eval_env, callback_on_new_best, callback_after_eval, n_eval_episodes, eval_freq, log_path, best_model_save_path, deterministic, render, verbose, warn)
         self.webhook = None
         self.counter = 1
+        self.plot_graph = False
         self.best_mode_reward = 0.0
         self.best_3_modes = [0, 0, 0]
         self.stats = {"Q1" : [], "Q2" : [], "Q3" : [], "Mode" : []}
@@ -49,6 +51,8 @@ class EvalCallbackWithWebhook(EvalCallback):
             self._is_success_buffer = []
 
             eval_time = time()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
             episode_rewards, episode_lengths = evaluate_policy(
                 self.model,
                 self.eval_env,
@@ -107,7 +111,7 @@ class EvalCallbackWithWebhook(EvalCallback):
                 msg = f"{title_str}: {mode_reward:.2f} (best:{max(mode_reward, self.best_mode_reward):.2f})"
                 msg += f"\nEval time: {eval_time_str}"
 
-                if self.counter >= 1:
+                if self.counter >= 1 and self.plot_graph:
                     plt.clf()
                     plt.plot(self.evaluations_timesteps, self.stats["Q3"], 'o-', linewidth=1, markersize=3, color="blue", label="Q3")
                     plt.plot(self.evaluations_timesteps, self.stats["Q2"], 'o-', linewidth=1, markersize=3, color="orange", label="Q2")
