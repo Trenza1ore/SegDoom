@@ -180,4 +180,14 @@ tasks = [
     ("map2s"        , "s4_ppo_ss_rgb_1e-4", 1, 2050808, {}, 'best_model_23.0_115'),
     ("map3"         , "s4_ppo_ss_rgb_1e-4", 1, 2050808, {}, 'best_model_23.0_115'),
 
+    # 118-120
+    ("map1"         , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("map2s"        , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("map3"         , "r1_r_ppo_sl_ss_5e-4",1, 2050808, {}, 'final'),
+
+    # 121-123
+    ("map1"         ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("map2s"        ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+    ("map3"         ,"r1_r_ppo_Dsl_ss_5e-4",1, 2050808, {}, 'final'),
+
 ]
