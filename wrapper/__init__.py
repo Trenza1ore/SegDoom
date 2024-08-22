@@ -250,6 +250,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         if self.measure_miou:
             self.miou.append(np.mean(self.iou))
             self.iou.clear()
+
     def step(self, action_id: int):
         self.game.make_action(self.actions[action_id], self.frame_repeat)
         self.reward_tracker.update()
