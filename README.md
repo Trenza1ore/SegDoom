@@ -7,10 +7,12 @@
 <video src="https://github.com/user-attachments/assets/c0ce34f6-ae1d-444c-ad2e-5415aa02d453" width=256/></video>
 
 #### Functionality of scripts in project's root directory:
-- **run.py -** runs the training session
-- **collect.py -** collects data from evalution episodes (game frames, position, etc.)
+- **train_models.py -** runs the training session
+- **eval_models.py -** collects data from evaluation episodes (game frames, position, etc.)
+- **tasks_eval.py -** defines what tasks to be executed by `tasks_eval.py`
 - **playit.py -** play a scenario yourself
-- **tba**
+- **create_run.py -** a sketchy solution to create temporary scripts for train/eval tasks
+- **clean_up.py -** cleans temporary scripts
 ---
 # All deprecated information, update in progress...
 
