@@ -179,7 +179,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                  reward_tracker: RewardTracker | dict | None = None, frame_repeat: int = 4, is_eval: bool = False, 
                  seed: int = None, input_rep: int = 0, set_map: str='', memsize: int=40_000, smooth_frame: bool=False,
                  realtime_ss: bool=False, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, 
-                 bot_num: int=8, only_pos: bool=False, measure_miou: bool=False):
+                 bot_num: int=8, only_pos: bool=False, measure_miou: bool=True):
         super().__init__(actions, input_shape, game_config, reward_tracker, frame_repeat, is_eval, seed, input_rep, 
                          set_map, None, frame_stack, buffer_size, n_updates, bot_num)
         if smooth_frame:
