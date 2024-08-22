@@ -2,3 +2,4 @@
 * text=auto
 *.pt filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
+test*.gif filter=lfs diff=lfs merge=lfs -text
