@@ -12,8 +12,9 @@ script_ext = "bat" if iswin else "sh"
 
 with open("run.py") as f:
     content = f.read()
-with open(f"run.{script_ext}", 'w') as f:
-    f.write("f{header}\npython run.py\npause")
+if iswin:
+    with open(f"run.{script_ext}", 'w') as f:
+        f.write("f{header}\npython run.py\npause")
 
 # for i in range(39,40):
 #     with open(f"run{i}.py", 'w') as f:
@@ -23,11 +24,12 @@ with open(f"run.{script_ext}", 'w') as f:
 
 with open("collect.py") as f:
     content = f.read()
-# with open(f"collect.{script_ext}", 'w') as f:
-#     f.write(f"{header}\npython collect.py\npause")
+if iswin:
+    with open(f"collect.{script_ext}", 'w') as f:
+        f.write(f"{header}\npython collect.py\npause")
 
 # eval_range = list(range(106, 117+1))
-eval_range = list(range(94, 96+1))
+eval_range = list(range(118, 123+1))
 for i in eval_range:
     with open(f"collect{i}.py", 'w') as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
