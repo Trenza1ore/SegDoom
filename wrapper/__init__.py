@@ -344,7 +344,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                                 ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
                                 weapon=self.memory.rewards[:self.memory._ptr+1],
                                 fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.uint64) if self.measure_miou else None)
+                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
             del self.memory, self.ep_ends
             gc.collect()
         elif isinstance(self.memory, DummyMemory):
@@ -354,7 +354,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                                 ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
                                 weapon=None,
                                 fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.uint64) if self.measure_miou else None)
+                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
         elif isinstance(self.memory, ReplayMemoryNoFrames):
             np.savez_compressed(path_, 
                                 obs=None, 
@@ -362,5 +362,5 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                                 ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
                                 weapon=self.memory.rewards[:self.memory._ptr+1],
                                 fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.uint64) if self.measure_miou else None)
+                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
         return self.fps
