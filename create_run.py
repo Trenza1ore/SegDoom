@@ -45,9 +45,11 @@ if True:
         for _ in [0] * n_jobs_per_worker:
             if queue:
                 current_jobs.append(queue.pop())
-        job_section = '\n'.join([f"{comment}\npython collect{j}.py" for j in current_jobs])
+        # job_section = '\n'.join([f"{comment}\npython collect{j}.py" for j in current_jobs])
+        with open(f"collect_batch{i}.py", 'w') as f:
+            f.write(content.replace("[task_idx:task_idx+1]", f"[{min(current_jobs)-1}:{max(current_jobs)}]"))
         with open(f"collect_batch{i}.{script_ext}", 'w') as f:
-            f.write(f"{header}\n{job_section}\npause")
+            f.write(f"{header}\npython collect_batch{i}.py\npause")
         i += 1
         print(f"Worker {i}: {current_jobs}")
 
