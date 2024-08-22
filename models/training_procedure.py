@@ -148,9 +148,10 @@ class EvalCallbackWithWebhook(EvalCallback):
             self.logger.dump(self.num_timesteps)
 
             if mode_reward >= self.best_3_modes[-1]:
-                self.best_3_modes.pop()
-                self.best_3_modes.append(mode_reward)
-                self.best_3_modes.sort(reverse=True)
+                if mode_reward not in self.best_3_modes:
+                    self.best_3_modes.pop()
+                    self.best_3_modes.append(mode_reward)
+                    self.best_3_modes.sort(reverse=True)
                 if self.best_model_save_path is not None:
                     save_path = os.path.join(self.best_model_save_path, f"best_model_{mode_reward}_{self.counter}")
                     self.model.save(save_path)

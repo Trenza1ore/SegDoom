@@ -523,6 +523,8 @@ def main():
         eval_callback.attach_webhook(webhook, name=name)
         webhook.send_msg(msg)
 
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         model.learn(total_timesteps=4_000_000, callback=eval_callback, progress_bar=True)
         model.save(f"./logs/{name}/final.zip")
         model.env.close()

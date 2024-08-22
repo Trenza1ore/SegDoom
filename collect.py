@@ -190,6 +190,8 @@ def main():
 
         p.update(0)
         scores = []
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         evaluate_policy(model, eval_env, eps_to_eval, callback=eval_callback)
         p.set_description("Finished evaluations")
         p.close()
