@@ -183,13 +183,13 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
         super().__init__(actions, input_shape, game_config, reward_tracker, frame_repeat, is_eval, seed, input_rep, 
                          set_map, None, frame_stack, buffer_size, n_updates, bot_num)
         if smooth_frame:
-            self.smooth_frame = True
-            self.step = self.step_no_skip
-            memsize *= frame_repeat
+            self.frame_repeat_iter = tuple([False] * (self.frame_repeat - 1) + [True])
+            self.step = self.step_smooth
+            memsize *= self.frame_repeat * self.n_updates
         else:
-            self.smooth_frame = False
+            self.frame_repeat_iter = None
             if self.frame_stack:
-                self.step = self.step_no_skip
+                self.step = self.step_stack
         if memsize > 0:
             if only_pos:
                 self.memory = ReplayMemoryNoFrames(size=memsize, dtypes=[np.uint8, np.uint8, 'f2', 'f2', 'f2'])
@@ -270,8 +270,8 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             self.memory.add(frame_save, state.game_variables[1], action_id, state.game_variables[-3:])
         return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
     
-    def step_no_skip(self, action_id: int):
-        latest_state_to_add = []
+    def step_stack(self, action_id: int):
+        latest_state_to_add = False
         for t in self.update_iter:
             self.game.make_action(self.actions[action_id], self.frame_repeat)
             terminated = self.game.is_episode_finished()
@@ -283,26 +283,52 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             if terminated:
                 missing_frames = self.n_updates - t
                 self.frame_buffer.extend([self.frame_buffer[-1]] * missing_frames)
-                observation = self.empty_frame
                 self.episode_terminates()
                 break
             else:
                 ss = self.semseg(state)
                 frame_save = self.record_frame(state, ss)
                 observation = self.extract_frame(state, ss, frame_save)
-                if self.frame_stack:
-                    self.frame_buffer.append(observation)
+                self.frame_buffer.append(observation)
                 latest_state_to_add = (frame_save, state.game_variables[1], action_id, state.game_variables[-3:])
-                if self.smooth_frame:
-                    self.memory.add(*latest_state_to_add)
         self.reward_tracker.update()
 
         # Only memorize last state to match ViZDoom frame repeat behavior
-        if not self.smooth_frame and latest_state_to_add:
+        if latest_state_to_add:
             self.memory.add(*latest_state_to_add)
         
-        if self.frame_stack:
-            observation = np.concatenate(self.frame_buffer, axis=0)
+        observation = np.concatenate(self.frame_buffer, axis=0)
+
+        return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
+
+    def step_smooth(self, action_id: int):
+        terminated = False
+        for t in self.update_iter:
+            for tt in self.frame_repeat_iter:
+                self.game.make_action(self.actions[action_id])
+                terminated = self.game.is_episode_finished()
+                if self.game.is_player_dead() and not terminated:
+                    self.game.respawn_player()
+                    terminated = self.game.is_episode_finished()
+                state = self.game.get_state()
+                # Early termination
+                if terminated:
+                    missing_frames = self.n_updates - t
+                    self.frame_buffer.extend([self.frame_buffer[-1]] * missing_frames)
+                    self.episode_terminates()
+                    break
+                else:
+                    ss = self.semseg(state)
+                    frame_save = self.record_frame(state, ss)
+                    observation = self.extract_frame(state, ss, frame_save)
+                    if tt:
+                        self.frame_buffer.append(observation)
+                    self.memory.add(frame_save, state.game_variables[1], action_id, state.game_variables[-3:])
+            if terminated:
+                break
+        self.reward_tracker.update()
+
+        observation = np.concatenate(self.frame_buffer, axis=0)
 
         return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
     
