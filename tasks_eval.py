@@ -1,6 +1,8 @@
-import sys
+import os
 
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+
+use_capture_config = True
 
 save_dir = "./logs"
 eps_to_eval = 400
@@ -10,11 +12,6 @@ global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segme
 env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
 # env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
 
-# My Ubuntu machine has less RAM & VRAM
-if sys.platform.startswith("linux"):
-    global_n_env_eval = 5
-    global_n_env_eval_rtss = 4
-
 env_kwargs_template = {
     "smooth_frame"  : False,
     "n_updates"     : 1,
@@ -22,6 +19,23 @@ env_kwargs_template = {
     "only_pos"      : True,
     "measure_miou"  : True,
 }
+
+if use_capture_config:
+    save_dir = "./captures"
+    eps_to_eval = 20
+    env_kwargs_template = {
+        "smooth_frame"  : True,
+        "n_updates"     : 1,
+        "frame_repeat"  : 4,
+        "only_pos"      : False,
+        "measure_miou"  : False,
+    }
+
+# Is this thread-safe? I don't know...
+if not os.path.isdir(save_dir):
+    if os.path.isfile(save_dir):
+        os.rename(save_dir, f"{save_dir}.file")
+    os.makedirs(save_dir)
 
 tasks = [
     ("map1"         , "ss_rgb_3e-4",        2, 2050808, {}, ''),       # 1
@@ -218,4 +232,9 @@ tasks = [
     ("rtss_map1a"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
     ("rtss_map1w"   , "rgb_9e-4",           1, 2050808, {}, ''),
     ("rtss_map1w"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+
+    # 138-140
+    ("rtss_map1"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("rtss_map2s"   , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    ("rtss_map3"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
 ]

@@ -12,11 +12,6 @@ script_ext = "bat" if iswin else "sh"
 
 with open("train_models.py", encoding="utf-8") as f:
     content = f.read()
-with open("train_model_1.py", 'w', encoding="utf-8") as f:
-    f.write(content.replace("task_idx = ", f"task_idx = 0\n# task_idx = "))
-if iswin:
-    with open(f"train_model_1.{script_ext}", 'w', encoding="utf-8") as f:
-        f.write("f{header}\npython train_model_1.py\npause")
 
 if False:
     for i in range(39,40):
@@ -28,15 +23,8 @@ if False:
 with open("eval_models.py", encoding="utf-8") as f:
     content = f.read()
 
-if True:
-    with open("eval_model_1.py", 'w', encoding="utf-8") as f:
-        f.write(content.replace("task_idx = ", f"task_idx = 0\n# task_idx = "))
-    if iswin:
-        with open(f"eval_model_1.{script_ext}", 'w', encoding="utf-8") as f:
-            f.write(f"{header}\npython eval_model_1.py\npause")
-
 # eval_range = list(range(106, 117+1))
-eval_range = list(range(134, 137+1))
+eval_range = list(range(138,140+1))
 for i in eval_range:
     with open(f"eval_model_{i}.py", 'w', encoding="utf-8") as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
