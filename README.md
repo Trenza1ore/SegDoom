@@ -9,6 +9,7 @@ Some gameplay videos are made available at Google Drive:
 - [PPO Agent with RGB+SS input (uses DeepLabV3 with ResNet-101 backbone for SS, no frame stack)](https://drive.google.com/drive/folders/17ngSPZ5X83kN_Qn9ufbYl2IgwzxG2dVv?usp=drive_link)
 
 Here's my favourite episode:
+
 https://github.com/user-attachments/assets/c0ce34f6-ae1d-444c-ad2e-5415aa02d453
 
 #### Functionality of scripts in project's root directory:
@@ -23,9 +24,11 @@ https://github.com/user-attachments/assets/c0ce34f6-ae1d-444c-ad2e-5415aa02d453
 
 ## Comparison of Semantic Segmentation models
 **DeepLabV3 with ResNet-101 backbone:**
+
 https://github.com/user-attachments/assets/f6f2140e-345c-4cb4-ba76-53ba318ffe2e
 
 **DeepLabV3 with MobileNet-V3 backbone:**
+
 https://github.com/user-attachments/assets/459fcbe2-ee09-4c86-b7f5-72e22e6850b1
 
 
