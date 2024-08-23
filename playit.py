@@ -19,18 +19,13 @@ is_recording = True
 save_state = "recording.pkl"
 #res = (256, 144)
 res = (1920, 1080)
-resize_res = (128, 72)
+
 n_bots = 0
 n_games = 1                # -1 for infinite
 delay_after_run = 3
 async_game = False
-map_to_play = "map1w"
-seed = 20508
-# precision_action_buffer = [
-#     [False] * 5 + [True],
-#     [False] * 5 + [True],
-#     [False] * 5 + [True],
-# ]
+map_to_play = "map1a"
+seed = 2050808
 
 # On Windows (not a main focus of ViZDoom), a 3-10 seconds delay is sometimes required
 # to run ViZDoom properly, otherwise ViZDoom game instance is never initialized properly,
