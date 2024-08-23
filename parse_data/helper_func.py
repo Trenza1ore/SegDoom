@@ -7,7 +7,7 @@ from tqdm.rich import tqdm
 from tqdm.notebook import tqdm as tqdm_n
 
 def load_merged_records(path_: str, load_obs: bool=True, load_pos: bool=True, from_notebook: bool=False, no_tqdm: bool=False,
-                        obs_transform: Callable=lambda x: x) -> tuple[list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray]:
+                        obs_transform: Callable=lambda x: x) -> tuple[list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray]:
     obs, pos, ep_ends, weapon, fps, miou = [], [], [], [], [], []
     ep_offset = 0
     matching_files = glob.glob(path_)
