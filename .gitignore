@@ -169,7 +169,7 @@ dm*/
 doom.wad
 doom.wad.bak
 _vizdoom.ini
-# TEXTMAP*.txt
+TEXTMAP*.txt
 
 # Saved data
 *.pt
