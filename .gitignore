@@ -161,6 +161,9 @@ plots/
 history/
 dm*/
 
+# Gameplay captures
+captures/
+
 # VS Code stuffs
 .vs/
 .vscode/
