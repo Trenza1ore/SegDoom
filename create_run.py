@@ -24,7 +24,7 @@ with open("eval_models.py", encoding="utf-8") as f:
     content = f.read()
 
 # eval_range = list(range(106, 117+1))
-eval_range = list(range(138,140+1))
+eval_range = list(range(145, 150+1))
 for i in eval_range:
     with open(f"eval_model_{i}.py", 'w', encoding="utf-8") as f:
         f.write(content.replace("task_idx = ", f"task_idx = {i-1}\n# task_idx = "))
@@ -32,9 +32,9 @@ for i in eval_range:
         with open(f"eval_model_{i}.{script_ext}", 'w', encoding="utf-8") as f:
             f.write(f"{header}\npython eval_model_{i}.py\npause")
 
-if False:
-    queue = list(range(130, 137+1))
-    n_workers = 1
+if True:
+    queue = eval_range
+    n_workers = 3
     n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
     i = 3
     special = [] # list(range(72, 63, -1))

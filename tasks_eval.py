@@ -22,13 +22,15 @@ env_kwargs_template = {
 
 if use_capture_config:
     save_dir = "./captures"
-    eps_to_eval = 20
+    eps_to_eval = 50
+    global_n_env_eval = 5
+    global_n_env_eval_rtss = 5
     env_kwargs_template = {
         "smooth_frame"  : True,
         "n_updates"     : 1,
         "frame_repeat"  : 4,
         "only_pos"      : False,
-        "measure_miou"  : False,
+        "measure_miou"  : True,
     }
 
 # Is this thread-safe? I don't know...
@@ -237,4 +239,18 @@ tasks = [
     ("rtss_map1"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
     ("rtss_map2s"   , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
     ("rtss_map3"    , "s4_ppo_ss_1e-3",     1, 2050808, {}, 'final'),
+    
+    # 141-144
+    ("map1a"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("rtss_map1a"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+    ("map1w"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("rtss_map1w"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
+    
+    # 145-150
+    ("rtss_map1"    , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("map1"         , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("map2s"        , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("rtss_map2s"   , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("rtss_map3"    , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("map3"         , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
 ]

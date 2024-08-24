@@ -40,11 +40,12 @@ class ReplayMemoryNoFrames:
 
 class DoomBotDeathMatch(gym.Env):
 
-    metadata = {"render_modes": ["offscreen"], "render_fps": 35}
+    metadata = {"render_modes": ["offscreen", "human", "rgb_array"], "render_fps": 35}
 
-    def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config, reward_tracker: RewardTracker|dict|None=None, 
-                 frame_repeat: int=4, is_eval: bool=False, seed: int=None, input_rep: int=0, set_map: str='', realtime_ss=None,
-                 frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, bot_num: int=8):
+    def __init__(self, render_mode: str=None, actions: list[list[bool]]=[[True], [False]], input_shape: tuple[int]=(3, 144, 256), 
+                 game_config={}, reward_tracker: RewardTracker|dict|None=None, frame_repeat: int=4, is_eval: bool=False, 
+                 seed: int=None, input_rep: int=0, set_map: str='', realtime_ss=None, frame_stack: bool=False, 
+                 buffer_size: int=-1, n_updates: int=None, bot_num: int=8):
         assert isinstance(frame_repeat, int) and frame_repeat > 0, f"Frame repeat value ({frame_repeat}) must be an integer >= 1"
         assert (isinstance(buffer_size, int) and buffer_size >= 1) if frame_stack else True, f"Buffer size ({buffer_size}) must be an integer >= 1"
 
@@ -66,6 +67,7 @@ class DoomBotDeathMatch(gym.Env):
             else:
                 print("Warning: frame stacking with a buffer size of 1 is meaningless", flush=True)
 
+        self.render_mode = "offscreen"
         self.action_space = gym.spaces.Discrete(len(actions), seed=seed)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=input_shape, dtype=np.uint8)
         self.empty_frame = np.zeros(self.observation_space.shape, dtype=np.uint8)
@@ -79,6 +81,10 @@ class DoomBotDeathMatch(gym.Env):
         if n_updates > 0:
             self.update_iter = tuple(range(n_updates))
         self.semseg = semseg
+
+        if render_mode in {"human", "rgb_array"}:
+            self.render_mode = render_mode
+        game_config["visibility"] = render_mode == "human"
         self.game = create_game(**game_config)
 
         if seed is not None:
@@ -169,21 +175,25 @@ class DoomBotDeathMatch(gym.Env):
         return observation, info
 
     def render(self):
-        pass
+        if self.render_mode == "rgb_array":
+            state = self.game.get_state()
+            return self.empty_frame if state is None else self.extract_frame(state)
 
     def close(self):
         self.reward_tracker.reset_last_vars()
+        self.game.close()
 
 class DoomBotDeathMatchCapture(DoomBotDeathMatch):
-    def __init__(self, actions: list[list[bool]], input_shape: tuple[int], game_config: dict[str, object], 
+    def __init__(self, render_mode: str=None, actions: list[list[bool]]=[[True], [False]], 
+                 input_shape: tuple[int]=(3, 144, 256), game_config: dict[str, object]={}, 
                  reward_tracker: RewardTracker | dict | None = None, frame_repeat: int = 4, is_eval: bool = False, 
                  seed: int = None, input_rep: int = 0, set_map: str='', memsize: int=40_000, smooth_frame: bool=False,
                  realtime_ss: bool=False, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, 
                  bot_num: int=8, only_pos: bool=False, measure_miou: bool=True):
-        super().__init__(actions, input_shape, game_config, reward_tracker, frame_repeat, is_eval, seed, input_rep, 
-                         set_map, None, frame_stack, buffer_size, n_updates, bot_num)
+        super().__init__(render_mode, actions, input_shape, game_config, reward_tracker, frame_repeat, is_eval, 
+                         seed, input_rep, set_map, None, frame_stack, buffer_size, n_updates, bot_num)
         if smooth_frame:
-            self.frame_repeat_iter = tuple([False] * (self.frame_repeat - 1) + [True])
+            self.frame_repeat_iter = tuple([False] * (self.frame_repeat - 1) + [self.frame_buffer is not None])
             self.step = self.step_smooth
             memsize *= self.frame_repeat * self.n_updates
         else:
@@ -303,6 +313,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
 
     def step_smooth(self, action_id: int):
         terminated = False
+        observation = self.empty_frame
         for t in self.update_iter:
             for tt in self.frame_repeat_iter:
                 self.game.make_action(self.actions[action_id])
@@ -313,8 +324,9 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                 state = self.game.get_state()
                 # Early termination
                 if terminated:
-                    missing_frames = self.n_updates - t
-                    self.frame_buffer.extend([self.frame_buffer[-1]] * missing_frames)
+                    if self.frame_buffer is not None:
+                        missing_frames = self.n_updates - t
+                        self.frame_buffer.extend([self.frame_buffer[-1]] * missing_frames)
                     self.episode_terminates()
                     break
                 else:
@@ -328,7 +340,8 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                 break
         self.reward_tracker.update()
 
-        observation = np.concatenate(self.frame_buffer, axis=0)
+        if self.frame_buffer is not None:
+            observation = np.concatenate(self.frame_buffer, axis=0)
 
         return observation, self.reward_tracker.delta_frag, terminated, terminated, {"r" : self.reward_tracker.last_frag}
     

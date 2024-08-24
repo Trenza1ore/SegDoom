@@ -1,0 +1,1486 @@
+namespace = "zdoom";
+thing // 0
+{
+x = 128.000;
+y = -128.000;
+angle = 0;
+type = 1;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 1
+{
+x = -352.000;
+y = -352.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 2
+{
+x = 352.000;
+y = -352.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 3
+{
+x = 352.000;
+y = 352.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 4
+{
+x = 0.000;
+y = -480.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 5
+{
+x = 256.000;
+y = 576.000;
+angle = 270;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 6
+{
+x = -576.000;
+y = -192.000;
+angle = 0;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 7
+{
+x = -256.000;
+y = -576.000;
+angle = 90;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 8
+{
+x = -480.000;
+y = 0.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 9
+{
+x = 576.000;
+y = -256.000;
+angle = 180;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 10
+{
+x = -256.000;
+y = 576.000;
+angle = 270;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 11
+{
+x = 256.000;
+y = -576.000;
+angle = 90;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 12
+{
+x = -576.000;
+y = -576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 13
+{
+x = 576.000;
+y = 576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 14
+{
+x = 480.000;
+y = 0.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 15
+{
+x = 0.000;
+y = 480.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 16
+{
+x = 576.000;
+y = -576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 17
+{
+x = -352.000;
+y = 352.000;
+angle = 0;
+type = 2012;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 18
+{
+x = 576.000;
+y = -512.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 19
+{
+x = -576.000;
+y = 256.000;
+angle = 0;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 20
+{
+x = 576.000;
+y = 256.000;
+angle = 180;
+type = 11;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 21
+{
+x = -512.000;
+y = 576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 22
+{
+x = -576.000;
+y = 512.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 23
+{
+x = -576.000;
+y = -512.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 24
+{
+x = -512.000;
+y = -576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 25
+{
+x = 416.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 26
+{
+x = 0.000;
+y = 0.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 27
+{
+x = 480.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 28
+{
+x = 0.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 29
+{
+x = 0.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 30
+{
+x = 576.000;
+y = 512.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 31
+{
+x = 512.000;
+y = -576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 32
+{
+x = 512.000;
+y = 576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 33
+{
+x = -576.000;
+y = 576.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 34
+{
+x = -256.000;
+y = 0.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 35
+{
+x = -576.000;
+y = 0.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 36
+{
+x = -256.000;
+y = 64.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 37
+{
+x = -256.000;
+y = -64.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 38
+{
+x = 256.000;
+y = 64.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 39
+{
+x = 256.000;
+y = 0.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 40
+{
+x = 256.000;
+y = -64.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 41
+{
+x = -64.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 42
+{
+x = 64.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 43
+{
+x = -64.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 44
+{
+x = 64.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 45
+{
+x = 416.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 46
+{
+x = 480.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 47
+{
+x = 256.000;
+y = 480.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 48
+{
+x = 256.000;
+y = 416.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 49
+{
+x = -256.000;
+y = 480.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 50
+{
+x = -256.000;
+y = 416.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 51
+{
+x = -416.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 52
+{
+x = -480.000;
+y = 256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 53
+{
+x = -416.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 54
+{
+x = -480.000;
+y = -256.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 55
+{
+x = -256.000;
+y = -416.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 56
+{
+x = -256.000;
+y = -480.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 57
+{
+x = 256.000;
+y = -416.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+thing // 58
+{
+x = 256.000;
+y = -480.000;
+angle = 0;
+type = 2007;
+coop = true;
+dm = true;
+single = true;
+skill4 = true;
+skill5 = true;
+skill3 = true;
+skill1 = true;
+skill2 = true;
+}
+
+vertex // 0
+{
+x = -640.000;
+y = -640.000;
+}
+
+vertex // 1
+{
+x = -640.000;
+y = 640.000;
+}
+
+vertex // 2
+{
+x = 640.000;
+y = 640.000;
+}
+
+vertex // 3
+{
+x = 640.000;
+y = -640.000;
+}
+
+vertex // 4
+{
+x = -320.000;
+y = 192.000;
+}
+
+vertex // 5
+{
+x = -320.000;
+y = 320.000;
+}
+
+vertex // 6
+{
+x = -192.000;
+y = 320.000;
+}
+
+vertex // 7
+{
+x = -192.000;
+y = 192.000;
+}
+
+vertex // 8
+{
+x = 192.000;
+y = 192.000;
+}
+
+vertex // 9
+{
+x = 192.000;
+y = 320.000;
+}
+
+vertex // 10
+{
+x = 320.000;
+y = 320.000;
+}
+
+vertex // 11
+{
+x = 320.000;
+y = 192.000;
+}
+
+vertex // 12
+{
+x = 192.000;
+y = -320.000;
+}
+
+vertex // 13
+{
+x = 192.000;
+y = -192.000;
+}
+
+vertex // 14
+{
+x = 320.000;
+y = -192.000;
+}
+
+vertex // 15
+{
+x = 320.000;
+y = -320.000;
+}
+
+vertex // 16
+{
+x = -320.000;
+y = -320.000;
+}
+
+vertex // 17
+{
+x = -320.000;
+y = -192.000;
+}
+
+vertex // 18
+{
+x = -192.000;
+y = -192.000;
+}
+
+vertex // 19
+{
+x = -192.000;
+y = -320.000;
+}
+
+linedef // 0
+{
+v1 = 0;
+v2 = 1;
+sidefront = 0;
+blocking = true;
+}
+
+linedef // 1
+{
+v1 = 1;
+v2 = 2;
+sidefront = 1;
+blocking = true;
+}
+
+linedef // 2
+{
+v1 = 2;
+v2 = 3;
+sidefront = 2;
+blocking = true;
+}
+
+linedef // 3
+{
+v1 = 3;
+v2 = 0;
+sidefront = 3;
+blocking = true;
+}
+
+linedef // 4
+{
+v1 = 4;
+v2 = 5;
+sidefront = 4;
+sideback = 5;
+twosided = true;
+}
+
+linedef // 5
+{
+v1 = 5;
+v2 = 6;
+sidefront = 6;
+sideback = 7;
+twosided = true;
+}
+
+linedef // 6
+{
+v1 = 6;
+v2 = 7;
+sidefront = 8;
+sideback = 9;
+twosided = true;
+}
+
+linedef // 7
+{
+v1 = 7;
+v2 = 4;
+sidefront = 10;
+sideback = 11;
+twosided = true;
+}
+
+linedef // 8
+{
+v1 = 8;
+v2 = 9;
+sidefront = 12;
+sideback = 13;
+twosided = true;
+}
+
+linedef // 9
+{
+v1 = 9;
+v2 = 10;
+sidefront = 14;
+sideback = 15;
+twosided = true;
+}
+
+linedef // 10
+{
+v1 = 10;
+v2 = 11;
+sidefront = 16;
+sideback = 17;
+twosided = true;
+}
+
+linedef // 11
+{
+v1 = 11;
+v2 = 8;
+sidefront = 18;
+sideback = 19;
+twosided = true;
+}
+
+linedef // 12
+{
+v1 = 12;
+v2 = 13;
+sidefront = 20;
+sideback = 21;
+twosided = true;
+}
+
+linedef // 13
+{
+v1 = 13;
+v2 = 14;
+sidefront = 22;
+sideback = 23;
+twosided = true;
+}
+
+linedef // 14
+{
+v1 = 14;
+v2 = 15;
+sidefront = 24;
+sideback = 25;
+twosided = true;
+}
+
+linedef // 15
+{
+v1 = 15;
+v2 = 12;
+sidefront = 26;
+sideback = 27;
+twosided = true;
+}
+
+linedef // 16
+{
+v1 = 16;
+v2 = 17;
+sidefront = 28;
+sideback = 29;
+twosided = true;
+}
+
+linedef // 17
+{
+v1 = 17;
+v2 = 18;
+sidefront = 30;
+sideback = 31;
+twosided = true;
+}
+
+linedef // 18
+{
+v1 = 18;
+v2 = 19;
+sidefront = 32;
+sideback = 33;
+twosided = true;
+}
+
+linedef // 19
+{
+v1 = 19;
+v2 = 16;
+sidefront = 34;
+sideback = 35;
+twosided = true;
+}
+
+sidedef // 0
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sidedef // 1
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sidedef // 2
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sidedef // 3
+{
+sector = 0;
+texturemiddle = "STONE2";
+}
+
+sidedef // 4
+{
+sector = 1;
+}
+
+sidedef // 5
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 6
+{
+sector = 1;
+}
+
+sidedef // 7
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 8
+{
+sector = 1;
+}
+
+sidedef // 9
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 10
+{
+sector = 1;
+}
+
+sidedef // 11
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 12
+{
+sector = 2;
+}
+
+sidedef // 13
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 14
+{
+sector = 2;
+}
+
+sidedef // 15
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 16
+{
+sector = 2;
+}
+
+sidedef // 17
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 18
+{
+sector = 2;
+}
+
+sidedef // 19
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 20
+{
+sector = 3;
+}
+
+sidedef // 21
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 22
+{
+sector = 3;
+}
+
+sidedef // 23
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 24
+{
+sector = 3;
+}
+
+sidedef // 25
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 26
+{
+sector = 3;
+}
+
+sidedef // 27
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 28
+{
+sector = 4;
+}
+
+sidedef // 29
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 30
+{
+sector = 4;
+}
+
+sidedef // 31
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 32
+{
+sector = 4;
+}
+
+sidedef // 33
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sidedef // 34
+{
+sector = 4;
+}
+
+sidedef // 35
+{
+sector = 0;
+texturetop = "BRONZE3";
+}
+
+sector // 0
+{
+heightfloor = 0;
+heightceiling = 144;
+texturefloor = "FLOOR0_7";
+textureceiling = "CEIL3_5";
+lightlevel = 200;
+}
+
+sector // 1
+{
+heightfloor = 0;
+heightceiling = 0;
+texturefloor = "MFLR8_1";
+textureceiling = "MFLR8_1";
+lightlevel = 160;
+}
+
+sector // 2
+{
+heightfloor = 0;
+heightceiling = 0;
+texturefloor = "MFLR8_1";
+textureceiling = "MFLR8_1";
+lightlevel = 160;
+}
+
+sector // 3
+{
+heightfloor = 0;
+heightceiling = 0;
+texturefloor = "MFLR8_1";
+textureceiling = "MFLR8_1";
+lightlevel = 160;
+}
+
+sector // 4
+{
+heightfloor = 0;
+heightceiling = 0;
+texturefloor = "MFLR8_1";
+textureceiling = "MFLR8_1";
+lightlevel = 160;
+}
+
