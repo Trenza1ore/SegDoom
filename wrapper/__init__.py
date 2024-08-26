@@ -59,9 +59,11 @@ class DoomBotDeathMatch(gym.Env):
         assert (isinstance(buffer_size, int) and buffer_size >= 1) if frame_stack else True, f"Buffer size ({buffer_size}) must be an integer >= 1"
 
         super().__init__()
+        
+        warnings.filterwarnings(action="ignore", category=UserWarning)
 
         if not realtime_ss is None:
-            print("Warning: realtime_ss not implemented for training", flush=True)
+            warnings.warn("realtime_ss not implemented for DoomBotDeathMatch as of now and is ignored", FutureWarning)
         
         if n_updates is None:
             n_updates = buffer_size
@@ -74,7 +76,7 @@ class DoomBotDeathMatch(gym.Env):
                 self.frame_buffer = deque(maxlen=buffer_size)
                 self.step = self.step_frame_stack
             else:
-                print("Warning: frame stacking with a buffer size of 1 is meaningless", flush=True)
+                warnings.warn("frame stacking with a buffer size of 1 is meaningless", UserWarning)
 
         self.render_mode = "offscreen"
         self.action_space = gym.spaces.Discrete(len(actions), seed=seed)
@@ -255,8 +257,8 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             self.semseg = realtime_ss
         else:
             if measure_miou:
-                print(f"Warning: measure_miou={measure_miou} has no effect since no real-time " + \
-                      f"semantic segmentation would take place (input_rep={input_rep})", flush=True)
+                warnings.warn(f"Warning: measure_miou={measure_miou} has no effect since no real-time " + \
+                              f"semantic segmentation would take place (input_rep={input_rep})", UserWarning)
                 self.measure_miou = False
 
         self.record_frame = lambda state, ss: np.dstack([state.screen_buffer, ss])
