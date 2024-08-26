@@ -32,7 +32,7 @@ with open("eval_models.py", encoding="utf-8") as f:
     content = f.read()
 
 # eval_range = list(range(106, 117+1))
-eval_range = list(range(143, 147+1))
+eval_range = list(range(141, 165+1))
 for i in eval_range:
     with open(f"eval_model_{i}.py", 'w', encoding="utf-8") as f:
         f.write(f_replace(content, i))
@@ -41,7 +41,7 @@ for i in eval_range:
             f.write(f"{header}\npython eval_model_{i}.py\npause")
 
 if True:
-    queue = eval_range
+    queue = list(range(162, 165+1))
     n_workers = 2
     n_jobs_per_worker = (len(queue) / n_workers).__ceil__()
     i = 0
@@ -54,11 +54,14 @@ if True:
                 current_jobs.append(queue.pop())
         # job_section = '\n'.join([f"{comment}\npython eval_model_{j}.py" for j in current_jobs])
         with open(f"eval_model_batch_{i}.py", 'w', encoding="utf-8") as f:
-            f.write(content.replace("[task_idx:task_idx+1]", f"[{min(current_jobs)-1}:{max(current_jobs)}]"))
+            f.write(content.replace("[task_idx:task_idx+1]", f"[{min(current_jobs)-1}:{max(current_jobs)}]").replace(
+                '# DiscordWebhook.send_msg_no_instance(f"Job done: {config}/{name}")',
+                'DiscordWebhook.send_msg_no_instance(f"Job done: {config}/{name}"); from random import randrange; sleep(randrange(60, 301))'
+            ))
         with open(f"eval_model_batch_{i}.{script_ext}", 'w', encoding="utf-8") as f:
             f.write(f"{header}\npython eval_model_batch_{i}.py\npause")
         i += 1
-        print(f"Worker {i}: {current_jobs}")
+        print(f"Worker {i}: {sorted(current_jobs)}")
 
 # with open("logs/savefig.py", encoding="utf-8") as f:
 #     content = f.read()
