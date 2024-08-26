@@ -9,6 +9,7 @@ CM = cm.jet
 
 USE_ASYNC = False
 DEFAULT_LABELS_DEF = defaultdict(lambda : 0)
+DEFAULT_LABELS_DEF["Floor/Ceil"] = 0
 DEFAULT_LABELS_DEF["Wall"] = 20
 DEFAULT_LABELS_DEF["ItemFog"] = 40
 DEFAULT_LABELS_DEF["TeleportFog"] = 60

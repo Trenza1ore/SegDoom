@@ -1,25 +1,28 @@
 import gc
+import warnings
 from time import time
 from collections import deque
 
 import torch
 import numpy as np
 import gymnasium as gym
-from vizdoom import vizdoom as vzd
-from stable_baselines3.common.callbacks import EvalCallback, sync_envs_normalization
 
-from vizdoom_utils import RewardTracker, semseg, semseg_rgb, create_game
 from models.replay_memory import ReplayMemory
+from vizdoom_utils.labels import DEFAULT_LABELS_DEF
+from vizdoom_utils import RewardTracker, semseg, semseg_rgb, create_game
 
 class DummyArray:
     def __setitem__(self, *args, **kwargs) -> None:
         return None
     def transpose(self, *args, **kwargs) -> None:
         return None
+    def fill(self, *args, **kwargs) -> None:
+        return None
 
 class DummyMemory:
     def __init__(self) -> None:
         self._ptr = -1
+        self.frames = self.features = self.rewards = self.actions = DummyArray()
     def add(self, *args, **kwargs) -> None:
         self._ptr += 1
 
@@ -33,10 +36,16 @@ class ReplayMemoryNoFrames:
         self.dummy_frame = DummyArray()
         self._memory = mem
         self._ptr = self._memory._ptr
-        self.features, self.rewards = mem.features, mem.rewards
+        self.features, self.rewards, self.actions = mem.features, mem.rewards, mem.actions
     def add(self, _, *args, **kwargs) -> None:
         self._memory.add(self.dummy_frame, *args, **kwargs)
         self._ptr = self._memory._ptr
+
+def force_alloc_mem(mem: ReplayMemory | ReplayMemoryNoFrames | DummyMemory, val: object=0) -> None:
+    mem.frames.fill(val)
+    mem.features.fill(val)
+    mem.rewards.fill(val)
+    mem.actions.fill(val)
 
 class DoomBotDeathMatch(gym.Env):
 
@@ -184,12 +193,13 @@ class DoomBotDeathMatch(gym.Env):
         self.game.close()
 
 class DoomBotDeathMatchCapture(DoomBotDeathMatch):
-    def __init__(self, render_mode: str=None, actions: list[list[bool]]=[[True], [False]], 
-                 input_shape: tuple[int]=(3, 144, 256), game_config: dict[str, object]={}, 
+    def __init__(self, render_mode: str=None, force_alloc: object=None, label_def=DEFAULT_LABELS_DEF,
+                 actions: list[list[bool]]=[[True], [False]], input_shape: tuple[int]=(3, 144, 256), game_config={}, 
                  reward_tracker: RewardTracker | dict | None = None, frame_repeat: int = 4, is_eval: bool = False, 
                  seed: int = None, input_rep: int = 0, set_map: str='', memsize: int=40_000, smooth_frame: bool=False,
-                 realtime_ss: bool=False, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, 
-                 bot_num: int=8, only_pos: bool=False, measure_miou: bool=True):
+                 realtime_ss: bool=False, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, bot_num: int=8, 
+                 only_pos: bool=False, measure_miou: bool=True, dtypes: tuple[np.dtype]=(np.float64, np.int64, np.uint64)):
+
         super().__init__(render_mode, actions, input_shape, game_config, reward_tracker, frame_repeat, is_eval, 
                          seed, input_rep, set_map, None, frame_stack, buffer_size, n_updates, bot_num)
         if smooth_frame:
@@ -206,12 +216,17 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             else:
                 self.memory = ReplayMemory(res=input_shape[1:], ch_num=4, size=memsize, 
                                            dtypes=[np.uint8, np.uint8, 'f2', 'f2', 'f2'])
+            if force_alloc is not None:
+                force_alloc_mem(self.memory, force_alloc)
         else:
             self.memory = DummyMemory()
+
         self.ep_ends = [0]
         self.semseg = semseg
-        self.iou = []
-        self.miou = []
+        self.scores = []
+        self.frame_iou = []
+        self.episode_miou = []
+        self.episode_iou = []
         self.measure_miou = measure_miou
 
         if realtime_ss and input_rep in [1, 2]:
@@ -220,6 +235,9 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             self.transform = ToTensorNormalizeSingleImg(device=models.ss.device)
             self.cpu = torch.device("cpu")
             models.ss.init_res101()
+
+            ss_classes = sorted(label_def.values())
+            
             def realtime_ss(state):
                 rgb_frame = state.screen_buffer
                 res = rgb_frame.shape[:2]
@@ -232,7 +250,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                 output_array = np.zeros(shape=res, dtype=np.uint8)
                 output_array[:120, :] = output_tensor.cpu()
                 if self.measure_miou:
-                    self.iou.append(models.ss.calculate_iou(output_array, semseg(state), num_classes=13))
+                    self.frame_iou.append(models.ss.calculate_iou(output_array, semseg(state), num_classes=ss_classes))
                 return output_array
             self.semseg = realtime_ss
         else:
@@ -253,13 +271,21 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
                 self.extract_frame = lambda state, ss, prev: state.screen_buffer.transpose(2,0,1)
         self.fps = []
         self.start_time = time()
+        if len(dtypes) == 3:
+            self.ftype, self.itype, self.utype = dtypes
+        else:
+            self.ftype = self.itype = self.utype = dtypes[0]
     
     def episode_terminates(self):
         self.ep_ends.append(self.memory._ptr + 1)
         self.fps.append((self.ep_ends[-1] - self.ep_ends[-2]) / (time() - self.start_time))
+        self.scores.append(self.reward_tracker.last_frag)
         if self.measure_miou:
-            self.miou.append(np.mean(self.iou))
-            self.iou.clear()
+            self.episode_iou.extend(self.frame_iou)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                self.episode_miou.append(np.nanmean(np.nanmean(self.frame_iou, axis=1)))
+            self.frame_iou.clear()
 
     def step(self, action_id: int):
         self.game.make_action(self.actions[action_id], self.frame_repeat)
@@ -373,7 +399,7 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             observation = np.repeat(observation, self.buffer_size, axis=0)
         
         if self.measure_miou:
-            self.iou.clear()
+            self.frame_iou.clear()
         return observation, info
     
     def save(self, path_: str):
@@ -381,26 +407,35 @@ class DoomBotDeathMatchCapture(DoomBotDeathMatch):
             np.savez_compressed(path_, 
                                 obs=self.memory.frames[:self.memory._ptr+1, :, :, :], 
                                 feats=self.memory.features[:self.memory._ptr+1, :],
-                                ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
+                                ep_ends=np.array(self.ep_ends[1:], dtype=self.utype),
                                 weapon=self.memory.rewards[:self.memory._ptr+1],
-                                fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
+                                actions=self.memory.actions[:self.memory._ptr+1],
+                                fps=np.array(self.fps, dtype=self.utype),
+                                scores=np.array(self.scores, dtype=self.itype),
+                                miou=np.array(self.episode_miou, dtype=self.ftype) if self.measure_miou else None,
+                                iou=np.array(self.episode_iou, dtype=self.ftype) if self.measure_miou else None)
             del self.memory, self.ep_ends
             gc.collect()
         elif isinstance(self.memory, DummyMemory):
             np.savez_compressed(path_, 
                                 obs=None, 
                                 feats=None,
-                                ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
+                                ep_ends=np.array(self.ep_ends[1:], dtype=self.utype),
                                 weapon=None,
-                                fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
+                                actions=None,
+                                fps=np.array(self.fps, dtype=self.utype),
+                                scores=np.array(self.scores, dtype=self.itype),
+                                miou=np.array(self.episode_miou, dtype=self.ftype) if self.measure_miou else None,
+                                iou=np.array(self.episode_iou, dtype=self.ftype) if self.measure_miou else None)
         elif isinstance(self.memory, ReplayMemoryNoFrames):
             np.savez_compressed(path_, 
                                 obs=None, 
                                 feats=self.memory.features[:self.memory._ptr+1, :],
-                                ep_ends=np.array(self.ep_ends[1:], dtype=np.uint64),
+                                ep_ends=np.array(self.ep_ends[1:], dtype=self.utype),
                                 weapon=self.memory.rewards[:self.memory._ptr+1],
-                                fps=np.array(self.fps, dtype=np.uint64),
-                                miou=np.array(self.miou, dtype=np.float64) if self.measure_miou else None)
+                                actions=self.memory.actions[:self.memory._ptr+1],
+                                fps=np.array(self.fps, dtype=self.utype),
+                                scores=np.array(self.scores, dtype=self.itype),
+                                miou=np.array(self.episode_miou, dtype=self.ftype) if self.measure_miou else None,
+                                iou=np.array(self.episode_iou, dtype=self.ftype) if self.measure_miou else None)
         return self.fps

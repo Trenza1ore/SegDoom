@@ -1,26 +1,34 @@
 import gc
 
 import numpy as np
-
 import torch
 import torch.nn as nn
 from torchvision import models
 
 # from semantic_segmentation.dataset import CustomDataset, ToTensorNormalize
 
-def calculate_iou(pred, target, num_classes):
-    ious = []
+def calculate_iou(pred, target, num_classes) -> list:
     if len(pred.shape) == 4:
         pred = torch.argmax(pred, dim=1)
-    for cls in range(num_classes):
+
+    if isinstance(num_classes, int):
+        ious = [float('nan')] * num_classes
+        cls_iter = range(num_classes)
+    else:
+        ious = [float('nan')] * len(num_classes)
+        cls_iter = num_classes
+
+    for i, cls in enumerate(cls_iter):
         pred_inds = (pred == cls)
         target_inds = (target == cls)
-        intersection = (pred_inds & target_inds).sum().item()
         union = (pred_inds | target_inds).sum().item()
-        if union == 0:
-            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
-        else:
-            ious.append(intersection / union)
+        if union > 0:
+            intersection = (pred_inds & target_inds).sum().item()
+            ious[i] = intersection / union
+    return ious
+
+def calculate_miou(pred, target, num_classes) -> np.floating:
+    ious = calculate_iou(pred, target, num_classes)
     return np.nanmean(ious)
 
 # model_cls, model_weight, mobile_name, tqdm_miniters = {

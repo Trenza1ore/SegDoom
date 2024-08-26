@@ -6,31 +6,35 @@ use_capture_config = True
 
 save_dir = "./logs"
 eps_to_eval = 400
-save_batch_size = 200       # (roughly) how many episodes are saved simultaneously, no promise
-global_n_env_eval = 20      # number of venv (vectorized environment) to use by default
-global_n_env_eval_rtss = 4  # number of venv to use for real-time semantic segmentation
-env_type = SubprocVecEnv    # type of venv, SubprocVecEnv for multi-processing (recommended)
-# env_type = DummyVecEnv    # don't use this unless you hate yourself a lot (or PC has no RAM)
+save_batch_size = 200               # (roughly) how many episodes are saved simultaneously, no promise
+global_n_env_eval = 20              # number of venv (vectorized environment) to use by default
+global_n_env_eval_rtss = 4          # number of venv to use for real-time semantic segmentation
+env_type = SubprocVecEnv            # type of venv, SubprocVecEnv for multi-processing (recommended)
+# env_type = DummyVecEnv            # don't use this unless you hate yourself a lot (or PC has no RAM)
 
 env_kwargs_template = {
-    "smooth_frame"  : False,
-    "n_updates"     : 1,
-    "frame_repeat"  : 4,
-    "only_pos"      : True,
-    "measure_miou"  : True,
+    "smooth_frame"  : False,        # Record at whatever framerate RL agent's seeing
+    "n_updates"     : 1,            # Number of updates per environment step
+    "frame_repeat"  : 4,            # Frame repeat / frame skip value
+    "only_pos"      : True,         # Record no RGB+SS frames, only positions
+    "measure_miou"  : True,         # Measure MIoU and IoU
 }
 
 if use_capture_config:
-    save_dir = "./captures"
-    eps_to_eval = 50
+    save_dir = "./captures"         # This is my capture directory
+    eps_to_eval = 20
     global_n_env_eval = 5
     global_n_env_eval_rtss = 5
     env_kwargs_template = {
-        "smooth_frame"  : True,
-        "n_updates"     : 1,
-        "frame_repeat"  : 4,
-        "only_pos"      : False,
-        "measure_miou"  : True,
+        "smooth_frame"  : True,     # Record at full 35 fps
+        "n_updates"     : 1,        # Number of updates per environment step
+        "frame_repeat"  : 4,        # Frame repeat / frame skip value
+        "only_pos"      : False,    # Record both RGB+SS frames and positions
+        "measure_miou"  : True,     # Measure MIoU and IoU
+
+        "force_alloc"   : 0,        # Ensure that we don't run out of memory mid-recording
+                                    # Set this to anything other than None forces memory allocation
+                                    # and we'd know if there's not enough memory at the start
     }
 
 # Is this thread-safe? I don't know...
@@ -242,15 +246,15 @@ tasks = [
     
     # 141-144
     ("map1a"        , "rgb_9e-4",           1, 2050808, {}, ''),
-    ("rtss_map1a"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
     ("map1w"        , "rgb_9e-4",           1, 2050808, {}, ''),
+    ("rtss_map1a"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
     ("rtss_map1w"   , "ppo_ss_rgb_1e-3",    1, 2050808, {}, 'best'),
     
     # 145-150
     ("rtss_map1"    , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
-    ("map1"         , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
-    ("map2s"        , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
     ("rtss_map2s"   , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
     ("rtss_map3"    , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("map1"         , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
+    ("map2s"        , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
     ("map3"         , "ppo_ss_rgb_1e-3", 1, 2050808, {}, 'best'),
 ]

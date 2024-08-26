@@ -6,9 +6,16 @@ import numpy as np
 from tqdm.rich import tqdm
 from tqdm.notebook import tqdm as tqdm_n
 
+def concat_if_typing_correct(x: list, correct_type: np.dtype, default: object=[]):
+    if len(x) > 0 and all(isinstance(arr, np.ndarray) and np.issubdtype(arr.dtype, correct_type) for arr in x):
+        x = np.concatenate(x, axis=0)
+    else:
+        x = default.copy() if hasattr(default, "copy") else default
+    return x
+
 def load_merged_records(path_: str, load_obs: bool=True, load_pos: bool=True, from_notebook: bool=False, no_tqdm: bool=False,
-                        obs_transform: Callable=lambda x: x) -> tuple[list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray, list|np.ndarray]:
-    obs, pos, ep_ends, weapon, fps, miou = [], [], [], [], [], []
+                        obs_transform: Callable=lambda x: x) -> tuple[list | np.ndarray]:
+    obs, pos, ep_ends, weapon, fps, miou, iou, scores = [], [], [], [], [], [], [], []
     ep_offset = 0
     matching_files = glob.glob(path_)
     if len(matching_files) < 1:
@@ -33,15 +40,22 @@ def load_merged_records(path_: str, load_obs: bool=True, load_pos: bool=True, fr
             fps.append(x["fps"])
         if "miou" in x:
             miou.append(x["miou"])
+        if "iou" in x:
+            iou.append(x["iou"])
+        if "scores" in x:
+            scores.append(x["scores"])
 
-    if len(miou) > 0 and all(isinstance(arr, np.ndarray) and np.issubdtype(arr.dtype, np.floating) for arr in miou):
-        miou = np.concatenate(miou, axis=0)
-    else:
-        miou = []
-    return (np.concatenate(obs, axis=0) if load_obs else [], 
-            np.concatenate(pos, axis=0) if load_pos else [],
-            np.concatenate(ep_ends, axis=0) if ep_ends else [],
-            np.concatenate(weapon, axis=0) if weapon else [],
-            np.concatenate(fps, axis=0) if fps else [],
-            miou
+    miou = concat_if_typing_correct(miou, np.floating, [])
+    iou = concat_if_typing_correct(iou, np.floating, [])
+    scores = concat_if_typing_correct(scores, np.integer, [])
+    
+    return (
+        np.concatenate(obs, axis=0) if load_obs else [], 
+        np.concatenate(pos, axis=0) if load_pos else [],
+        np.concatenate(ep_ends, axis=0) if ep_ends else [],
+        np.concatenate(weapon, axis=0) if weapon else [],
+        np.concatenate(fps, axis=0) if fps else [],
+        miou,
+        iou,
+        scores
     )
