@@ -95,14 +95,14 @@ class DiscordWebhook:
         return True
     
     def send_string(self, content: str):
-        stat_data = {
+        msg_data = {
             "content" : content,
             "username" : "Doom Guy"
         }
         try:
-            requests.post(self.url, json = stat_data)
+            requests.post(self.url, json = msg_data)
         except:
-            print(f"Unable to send stats")
+            print(f"Unable to send msg")
     
     def send_error(self, e: Exception):
         err_msg = ''.join(traceback.format_exception(e))
@@ -111,14 +111,14 @@ class DiscordWebhook:
     
     @classmethod
     def send_msg_no_instance(cls, content: str):
-        stat_data = {
+        msg_data = {
             "content" : content,
             "username" : "Doom Guy"
         }
         try:
-            requests.post(WEBHOOK_URL, json = stat_data)
+            requests.post(WEBHOOK_URL, json = msg_data)
         except:
-            print(f"Unable to send stats")
+            print(f"Unable to send msg")
     
     @classmethod
     def send_error_no_instance(cls, e: Exception):
