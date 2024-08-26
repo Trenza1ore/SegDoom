@@ -108,3 +108,23 @@ class DiscordWebhook:
         err_msg = ''.join(traceback.format_exception(e))
         self.send_string(err_msg)
         print(err_msg)
+    
+    @classmethod
+    def send_msg_no_instance(cls, content: str):
+        stat_data = {
+            "content" : content,
+            "username" : "Doom Guy"
+        }
+        try:
+            requests.post(WEBHOOK_URL, json = stat_data)
+        except:
+            print(f"Unable to send stats")
+    
+    @classmethod
+    def send_error_no_instance(cls, e: Exception):
+        err_msg = ''.join(traceback.format_exception(e))
+        cls.send_msg_no_instance(err_msg)
+        print(err_msg)
+
+if __name__ == "__main__":
+    DiscordWebhook.send_msg_no_instance("Test")
