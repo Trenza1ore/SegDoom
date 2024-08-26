@@ -5,7 +5,7 @@ An Informatics MSc Project at the University of Edinburgh
 
 **An Informatics MSc Project at University of Edinburgh**
 
-Some gameplay videos are made available at Google Drive:
+Some gameplay videos are made available on Google Drive in 256x144 resolution (256x288 for SS+RGB stacked together):
 - [PPO Agent with SS(4)/RGB/RGB+SS input (uses DeepLabV3 with ResNet-101 backbone for SS, frame stack of 4 for SS(4))](https://drive.google.com/drive/folders/1KHQZr7Uls9YiFIPP_bxTmTyBuNYZZo-y?usp=drive_link)
 - [[Old recordings] PPO Agent with RGB+SS input (uses DeepLabV3 with ResNet-101 backbone for SS, no frame stack)](https://drive.google.com/drive/folders/17ngSPZ5X83kN_Qn9ufbYl2IgwzxG2dVv?usp=drive_link)
 
