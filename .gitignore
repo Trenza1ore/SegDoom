@@ -199,12 +199,12 @@ logs/**/*.gif
 *.html
 
 # Temporary files, loosely equivalent to this regex:
-# (?:(?:run)|(?:plt)|(?:collect)|(?:savefig)|(?:train_model)|(?:eval_model)).+\.(?:(?:py)|(?:sh)|(?:bat))
+# (?:(?:run)|(?:plt)|(?:collect)|(?:savefig)|(?:train_model_)|(?:eval_model_)).+\.(?:(?:py)|(?:sh)|(?:bat))
 run?*.[bsp][ahy]*
 plt?*.[bsp][ahy]*
 collect?*.[bsp][ahy]*
-train_model?*.[bsp][ahy]*
-eval_model?*.[bsp][ahy]*
+train_model_?*.[bsp][ahy]*
+eval_model_?*.[bsp][ahy]*
 savefig?*.[bsp][ahy]*
 
 # Testing-related stuffs
