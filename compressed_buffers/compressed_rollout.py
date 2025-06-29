@@ -5,12 +5,12 @@ from functools import partial
 import numpy as np
 import torch as th
 from gymnasium import spaces
-from stable_baselines3.common.buffers import RolloutBuffer, RolloutBufferSamples, VecNormalize
+from stable_baselines3.common.buffers import BaseBuffer, RolloutBuffer, RolloutBufferSamples, VecNormalize
 from compressed_buffers.utils import rle_compress, rle_decompress
 
 CompressionMethods = namedtuple("CompressionMethod", ["compress", "decompress"])
 
-__compression_method_mapping = {
+_compression_method_mapping = {
     "rle": CompressionMethods(compress=rle_compress, decompress=rle_decompress)
 }
 
@@ -44,10 +44,11 @@ class CompressedRolloutBuffer(RolloutBuffer):
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.generator_ready = False
-        self.dtypes = dtypes or dict(len_type=np.uint8, pos_type=np.uint16, elem_type=np.uint8)
-        self.compress, self.decompress = __compression_method_mapping[compression_method]
-        self.compress = partial(__compression_method_mapping[compression_method].compress, **self.dtypes)
+        self.dtypes = dtypes or dict(len_type=np.uint16, pos_type=np.uint16, elem_type=np.uint8)
+        self.compress, self.decompress = _compression_method_mapping[compression_method]
+        self.compress = partial(_compression_method_mapping[compression_method].compress, **self.dtypes)
         self.normalize_images = normalize_images
+        self.flatten_config = dict(shape=np.prod(self.obs_shape), dtype=np.float32)
         self.reset()
 
     def reset(self) -> None:
@@ -62,7 +63,7 @@ class CompressedRolloutBuffer(RolloutBuffer):
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.generator_ready = False
-        super().reset()
+        BaseBuffer.reset(self)
 
     def add(
         self,
@@ -159,8 +160,8 @@ class CompressedRolloutBuffer(RolloutBuffer):
     
     # @lru_cache(maxsize=int(os.environ.get("DECOMP_CACHE_SIZE", 512))) # Doesn't make sense on second thought
     def reconstruct_obs(self, idx: int):
-        len_arr = np.frombuffer(self.len_arr[idx], self.dtypes["len_type"])
-        pos_arr = np.frombuffer(self.pos_arr[idx], self.dtypes["pos_type"])
-        elem_arr = np.frombuffer(self.observations[idx], self.dtypes["elem_type"])
-        obs = self.decompress(len_arr, pos_arr, elem_arr, arr_configs=dict(shape=self.obs_shape, dtype=np.float32))
+        len_arr = np.frombuffer(self.len_arr[idx][0], self.dtypes["len_type"])
+        pos_arr = np.frombuffer(self.pos_arr[idx][0], self.dtypes["pos_type"])
+        elem_arr = np.frombuffer(self.observations[idx][0], self.dtypes["elem_type"])
+        obs = self.decompress(len_arr, pos_arr, elem_arr, arr_configs=self.flatten_config).reshape(self.obs_shape)
         return th.from_numpy(obs).to(self.device, th.float32)

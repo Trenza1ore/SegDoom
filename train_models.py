@@ -31,7 +31,7 @@ from compressed_buffers import CompressedRolloutBuffer
 # ====================================================================================
 
 # set this to -1 to execute all tasks in tasks list
-task_idx = 0
+task_idx = 51
 
 # Train on map1 only
 training_map = scenarios.maps["map1"]
@@ -350,7 +350,7 @@ def main():
         elif input_rep == 1 and "ss-rle" in name:
             using_rle_buffer = True
             policy_kwargs["normalize_images"] = False
-            buffer_kwargs = dict(dtypes=dict(len_type=np.uint8, pos_type=np.uint16, elem_type=np.uint8),
+            buffer_kwargs = dict(dtypes=dict(len_type=np.uint16, pos_type=np.uint16, elem_type=np.uint8),
                                  normalize_images=True, compression_method="rle")
             ppo_extra_args = dict(rollout_buffer_class=CompressedRolloutBuffer, rollout_buffer_kwargs=buffer_kwargs)
 
@@ -549,5 +549,4 @@ def main():
             torch.cuda.empty_cache()
 
 if __name__ == "__main__":
-    # tasks = tasks[-1:]
     main()
