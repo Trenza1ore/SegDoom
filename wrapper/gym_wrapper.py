@@ -16,10 +16,10 @@ class DoomBotDeathMatch(gym.Env):
 
     metadata = {"render_modes": ["offscreen", "human", "rgb_array"], "render_fps": 35}
 
-    def __init__(self, render_mode: str=None, actions: list[list[bool]]=[[True], [False]], input_shape: tuple[int]=(3, 144, 256), 
-                 game_config={}, reward_tracker: RewardTracker|dict|None=None, frame_repeat: int=4, is_eval: bool=False, 
-                 seed: int=None, input_rep: int=0, set_map: str='', realtime_ss=None, frame_stack: bool=False, 
-                 buffer_size: int=-1, n_updates: int=None, bot_num: int=8):
+    def __init__(self, render_mode: str=None, actions: list[list[bool]]=[[True], [False]],
+                 input_shape: tuple[int]=(3, 144, 256), game_config={}, reward_tracker: RewardTracker|dict|None=None,
+                 frame_repeat: int=4, is_eval: bool=False, seed: int=None, input_rep: int=0, set_map: str='',
+                 realtime_ss=None, frame_stack: bool=False, buffer_size: int=-1, n_updates: int=None, bot_num: int=8):
         assert isinstance(frame_repeat, int) and frame_repeat > 0, f"Frame repeat value ({frame_repeat}) must be an integer >= 1"
         assert (isinstance(buffer_size, int) and buffer_size >= 1) if frame_stack else True, f"Buffer size ({buffer_size}) must be an integer >= 1"
 
@@ -27,7 +27,7 @@ class DoomBotDeathMatch(gym.Env):
         
         warnings.filterwarnings(action="ignore", category=UserWarning)
 
-        if not realtime_ss is None:
+        if realtime_ss:
             warnings.warn("realtime_ss not implemented for DoomBotDeathMatch as of now and is ignored", FutureWarning)
         
         if n_updates is None:
