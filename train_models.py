@@ -24,6 +24,7 @@ from models import *
 from vizdoom_utils import *
 from wrapper import DoomBotDeathMatch
 from models.training_procedure import *
+from compressed_buffers import CompressedRolloutBuffer
 
 # ============================== What is this ========================================
 # The main program to run training sessions
@@ -174,7 +175,7 @@ rpl = dict(
 st4 = dict(env_config={"n_updates" : 1, "frame_repeat" : 4}, batch_size=64, 
            policy_config={"net_arch" : dict(pi=[128, 128], vf=[128, 128])})
 
-# config, lr, ep_max, save_interval, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
+# config, lr, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
 # framestack: -1 = global behavior, 0 = Off, 1 = On
 tasks = [
     # 1-3 (PPO for lr=3e-4)
@@ -282,6 +283,9 @@ tasks = [
     (training_map, 5e-4, "Dsl_ss_5e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 49
     (training_map, 3e-4, "Dsl_ss_3e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 50
     (training_map, 1e-4, "Dsl_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 51
+    
+    # Test
+    (training_map, 1e-3, "ss-rle_1e-3",    1, 4, 2050808, -1, "PPO", None, {}),    # 52
 ]
 
 if task_idx >= 0:
@@ -338,9 +342,17 @@ def main():
             "features_extractor_class"  : CustomCNN,
             "features_extractor_kwargs" : {"features_dim" : 128}
         }
-
+        
+        ppo_extra_args = {}
+        using_rle_buffer = False
         if input_rep == 3:
             policy_kwargs["normalize_images"] = False
+        elif input_rep == 1 and "ss-rle" in name:
+            using_rle_buffer = True
+            policy_kwargs["normalize_images"] = False
+            buffer_kwargs = dict(dtypes=dict(len_type=np.uint8, pos_type=np.uint16, elem_type=np.uint8),
+                                 normalize_images=True, compression_method="rle")
+            ppo_extra_args = dict(rollout_buffer_class=CompressedRolloutBuffer, rollout_buffer_kwargs=buffer_kwargs)
 
         t = time()
         env_type = SubprocVecEnv if n_envs > 1 else DummyVecEnv
@@ -395,7 +407,7 @@ def main():
                 model = PPO("CnnPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps, batch_size=batch_size, 
                             clip_range=model_config.get("clip_range", 0.2), 
                             ent_coef=model_config.get("ent_coef", 0), vf_coef=model_config.get("vf_coef", 0.5), 
-                            n_epochs=n_epochs, policy_kwargs=PPO_policy_kwargs, seed=seed)
+                            n_epochs=n_epochs, policy_kwargs=PPO_policy_kwargs, seed=seed, **ppo_extra_args)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "r_ppo":
@@ -413,7 +425,8 @@ def main():
                 model = RPPO("CnnLstmPolicy", env, learning_rate=lr, verbose=1, n_steps=n_steps,
                              clip_range=model_config.get("clip_range", 0.2), 
                              ent_coef=model_config.get("ent_coef", 0), vf_coef=model_config.get("vf_coef", 0.5), 
-                             batch_size=batch_size, n_epochs=n_epochs, policy_kwargs=RPPO_policy_kwargs, seed=seed)
+                             batch_size=batch_size, n_epochs=n_epochs, policy_kwargs=RPPO_policy_kwargs, seed=seed,
+                             **ppo_extra_args)
                 if psutil is not None:
                     model_desc = f"\nMemory available: {psutil.virtual_memory().available / 1e9:.2f} GB"
             case "iqn":
@@ -431,10 +444,11 @@ def main():
                     pass
                 
                 exp_frac = 0.1
-                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0, buffer_size=409600//ch_num,
-                            replay_buffer_class=ReplayBuffer, replay_buffer_kwargs=dict(handle_timeout_termination = False),  # ER
-                            policy_kwargs=IQN_policy_kwargs, optimize_memory_usage=True, batch_size=32, tau=0.01, seed=seed, 
-                            exploration_initial_eps=1, exploration_final_eps=0.01, exploration_fraction=exp_frac, **model_config)
+                model = IQN("CnnPolicy", env, learning_rate=lr, verbose=1, learning_starts=0,
+                            buffer_size=409600//ch_num, replay_buffer_class=ReplayBuffer,
+                            replay_buffer_kwargs=dict(handle_timeout_termination = False),  # ER
+                            policy_kwargs=IQN_policy_kwargs, optimize_memory_usage=True, batch_size=32, tau=0.01, seed=seed, exploration_initial_eps=1, exploration_final_eps=0.01,
+                            exploration_fraction=exp_frac, **model_config)
                 
                 total_memory_usage = model.replay_buffer.observations.nbytes + model.replay_buffer.actions.nbytes
                 total_memory_usage += model.replay_buffer.rewards.nbytes + model.replay_buffer.dones.nbytes
@@ -515,7 +529,7 @@ def main():
         
         msg = f"Number of available buttons: {n} | Size of action space: {len(act_actions)} | "
         msg += f"Input shape: {env_kwargs['input_shape']}\n"
-        msg += f"Model: {model_str.upper()}, Framestack: {bool(framestack)}{model_desc}"
+        msg += f"Model: {model_str.upper()}, Framestack: {bool(framestack)}{model_desc}, RLEBuffer: {using_rle_buffer}"
         print(model.policy, flush=True)
         print(msg, flush=True)
 
@@ -535,4 +549,5 @@ def main():
             torch.cuda.empty_cache()
 
 if __name__ == "__main__":
+    # tasks = tasks[-1:]
     main()
