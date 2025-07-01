@@ -6,8 +6,6 @@ from time import sleep, time
 from tqdm.rich import tqdm
 
 import torch
-import torch.nn as nn
-from torch.optim import SGD, Adam, Adagrad
 
 from iqn import IQN
 from stable_baselines3 import PPO
@@ -31,7 +29,7 @@ from compressed_buffers import CompressedRolloutBuffer
 # ====================================================================================
 
 # set this to -1 to execute all tasks in tasks list
-task_idx = 51
+task_idx = 0
 
 # Train on map1 only
 training_map = scenarios.maps["map1"]
@@ -175,6 +173,8 @@ rpl = dict(
 st4 = dict(env_config={"n_updates" : 1, "frame_repeat" : 4}, batch_size=64, 
            policy_config={"net_arch" : dict(pi=[128, 128], vf=[128, 128])})
 
+default_policy = dict({"net_arch" : dict(pi=[64, 64], vf=[64, 64])})
+
 # config, lr, name, input_rep, n_envs, seed, framestack, model_str, teacher, variables
 # framestack: -1 = global behavior, 0 = Off, 1 = On
 tasks = [
@@ -285,7 +285,11 @@ tasks = [
     (training_map, 1e-4, "Dsl_ss_1e-4",    1, 4, 2050808,  1, "R_PPO", None,rpssd),# 51
     
     # Test
-    (training_map, 1e-3, "ss-rle_1e-3",    1, 4, 2050808, -1, "PPO", None, {}),    # 52
+    (training_map, 1e-3, "ss-norm_1e-3",   1, 4, 2050808, -1, "PPO", None,   {}),  # 52
+    (training_map, 1e-3, "ss-rle-n_1e-3",  1, 4, 2050808, -1, "PPO", None,   {}),  # 53
+    (training_map, 1e-3, "ss-rle_1e-3",    1, 4, 2050808, -1, "PPO", None,   {}),  # 54
+    (training_map, 1e-3, "ss-rle_1e-3",    1, 4, 2050808,  4, "PPO", None,  st4),  # 55
+    (training_map, 1e-3, "ss-rle-n_1e-3",  1, 4, 2050808,  4, "PPO", None,  st4),  # 56
 ]
 
 if task_idx >= 0:
@@ -340,7 +344,8 @@ def main():
         policy_kwargs = {
             "normalize_images"          : True,
             "features_extractor_class"  : CustomCNN,
-            "features_extractor_kwargs" : {"features_dim" : 128}
+            "features_extractor_kwargs" : {"features_dim" : 128},
+            **default_policy
         }
         
         ppo_extra_args = {}
@@ -350,8 +355,14 @@ def main():
         elif input_rep == 1 and "ss-rle" in name:
             using_rle_buffer = True
             policy_kwargs["normalize_images"] = False
+            args = name.split("-")
+            rle_pos = args.index("rle")
+            if len(args) > rle_pos + 1:
+                options = args[rle_pos+1]
+                normalize_images = "n" in options
+                auto_slice = "a" in options
             buffer_kwargs = dict(dtypes=dict(len_type=np.uint16, pos_type=np.uint16, elem_type=np.uint8),
-                                 normalize_images=True, compression_method="rle")
+                                 normalize_images=normalize_images, compression_method="rle", auto_slice=auto_slice)
             ppo_extra_args = dict(rollout_buffer_class=CompressedRolloutBuffer, rollout_buffer_kwargs=buffer_kwargs)
 
         t = time()
@@ -372,7 +383,7 @@ def main():
 
         eval_callback =  EvalCallbackWithWebhook(
             eval_env,
-            n_eval_episodes=10,
+            n_eval_episodes=50,
             best_model_save_path=f'./logs/{name}', 
             log_path=f'./logs/{name}', 
             eval_freq=4096*2,

@@ -211,6 +211,7 @@ savefig?*.[bsp][ahy]*
 savefig.py
 scores.npy
 FFmpeg*.bat
+test-*/
 
 # Various experiments-related stuffs
 logs/*back*/

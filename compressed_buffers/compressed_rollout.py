@@ -6,7 +6,7 @@ import numpy as np
 import torch as th
 from gymnasium import spaces
 from stable_baselines3.common.buffers import BaseBuffer, RolloutBuffer, RolloutBufferSamples, VecNormalize
-from compressed_buffers.utils import rle_compress, rle_decompress
+from compressed_buffers.utils import rle_compress, rle_decompress, _determine_optimal_shape
 
 CompressionMethods = namedtuple("CompressionMethod", ["compress", "decompress"])
 
@@ -17,8 +17,8 @@ _compression_method_mapping = {
 
 class CompressedRolloutBuffer(RolloutBuffer):
     observations: np.ndarray[object]
-    len_arr: np.ndarray
-    pos_arr: np.ndarray
+    len_arr: np.ndarray[object]
+    pos_arr: np.ndarray[object]
     actions: np.ndarray
     rewards: np.ndarray
     advantages: np.ndarray
@@ -37,24 +37,53 @@ class CompressedRolloutBuffer(RolloutBuffer):
         gamma: float = 0.99,
         n_envs: int = 1,
         dtypes: Optional[dict] = None,
-        normalize_images: bool = True,
-        compression_method: Literal["rle"] = "rle"
+        normalize_images: bool = False,
+        compression_method: Literal["rle"] = "rle",
+        compression_kwargs: Optional[dict] = None,
+        decompression_kwargs: Optional[dict] = None,
+        auto_slice: bool = True,
     ):
-        super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        # Avoid calling RolloutBuffer.reset which might be over-allocating memory for observations
+        BaseBuffer.__init__(self, buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.generator_ready = False
-        self.dtypes = dtypes or dict(len_type=np.uint16, pos_type=np.uint16, elem_type=np.uint8)
-        self.compress, self.decompress = _compression_method_mapping[compression_method]
-        self.compress = partial(_compression_method_mapping[compression_method].compress, **self.dtypes)
         self.normalize_images = normalize_images
-        self.flatten_config = dict(shape=np.prod(self.obs_shape), dtype=np.float32)
+        self.flatten_len = np.prod(self.obs_shape)
+        self.flatten_config = dict(shape=self.flatten_len, dtype=np.float32)
+
+        # Handle dtypes
+        self.dtypes = dtypes or dict(len_type=np.uint16, pos_type=np.uint16, elem_type=np.uint8)
+        if not isinstance(self.dtypes, dict):
+            elem_type = self.dtypes
+            self.dtypes = dict(len_type=elem_type, pos_type=elem_type, elem_type=elem_type)
+
+        # Compress and decompress
+        compression_kwargs = compression_kwargs or {}
+        self.compress = partial(_compression_method_mapping[compression_method].compress, **self.dtypes,
+                                **compression_kwargs)
+        self.decompression_kwargs = decompression_kwargs or {}
+        self.decompress = _compression_method_mapping[compression_method].decompress
+
+        # Handle auto slicing
+        if auto_slice:
+            elem_type = self.dtypes["elem_type"]
+            self.auto_slice = _determine_optimal_shape(arr_len=self.flatten_len, dtype=elem_type)
+            self.dtypes = dict(len_type=elem_type, pos_type=elem_type, elem_type=elem_type)
+        else:
+            self.auto_slice = None
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.empty((self.buffer_size, self.n_envs), dtype=object)
-        self.len_arr = np.empty((self.buffer_size, self.n_envs), dtype=object)
-        self.pos_arr  = np.empty((self.buffer_size, self.n_envs), dtype=object)
+        if self.auto_slice is None:
+            buffer_shape = (self.buffer_size, self.n_envs)
+        else:
+            slice_num = self.auto_slice[0] + bool(self.auto_slice[1])
+            buffer_shape = (self.buffer_size, self.n_envs, slice_num)
+        self.observations = np.empty(buffer_shape, dtype=object)
+        self.len_arr = np.empty(buffer_shape, dtype=object)
+        self.pos_arr  = np.empty(buffer_shape, dtype=object)
+
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -95,13 +124,35 @@ class CompressedRolloutBuffer(RolloutBuffer):
 
         # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
+        
+        elem_type = self.dtypes["elem_type"]
+        elem_is_int = np.issubdtype(elem_type, np.integer)
+        elem_type_info = np.iinfo(elem_type) if elem_is_int else np.finfo(elem_type)
+        elem_min, elem_max = elem_type_info.min, elem_type_info.max
+
+        if isinstance(obs, th.Tensor):
+            obs = th.clamp(obs, elem_min, elem_max).cpu().numpy().astype(elem_type, casting="unsafe")
+        else:
+            obs = np.clip(obs, elem_min, elem_max, dtype=elem_type, casting="unsafe")
 
         # Compress everything
         for env in range(self.n_envs):
-            l, p, e = self.compress(np.ravel(obs[env]))
-            self.len_arr[self.pos, env] = l
-            self.pos_arr[self.pos, env] = p
-            self.observations[self.pos, env] = e
+            arr = obs[env].ravel()
+            if self.auto_slice:
+                _, col, remainder = self.auto_slice
+                to_iter = [arr[i:i+col] for i in range(0, self.flatten_len-remainder, col)]
+                if remainder:
+                    to_iter.append(arr[-remainder:])
+                for i, slice in enumerate(to_iter):
+                    l, p, e = self.compress(slice)
+                    self.len_arr[self.pos, env, i] = l
+                    self.pos_arr[self.pos, env, i] = p
+                    self.observations[self.pos, env, i] = e
+            else:
+                l, p, e = self.compress(arr)
+                self.len_arr[self.pos, env] = l
+                self.pos_arr[self.pos, env] = p
+                self.observations[self.pos, env] = e
 
         self.actions[self.pos] = np.array(action)
         self.rewards[self.pos] = np.array(reward)
@@ -157,11 +208,23 @@ class CompressedRolloutBuffer(RolloutBuffer):
             self.returns[batch_inds].flatten(),
         )
         return RolloutBufferSamples(obs, *tuple(map(self.to_torch, data)))
-    
-    # @lru_cache(maxsize=int(os.environ.get("DECOMP_CACHE_SIZE", 512))) # Doesn't make sense on second thought
+
     def reconstruct_obs(self, idx: int):
         len_arr = np.frombuffer(self.len_arr[idx][0], self.dtypes["len_type"])
         pos_arr = np.frombuffer(self.pos_arr[idx][0], self.dtypes["pos_type"])
         elem_arr = np.frombuffer(self.observations[idx][0], self.dtypes["elem_type"])
-        obs = self.decompress(len_arr, pos_arr, elem_arr, arr_configs=self.flatten_config).reshape(self.obs_shape)
+        if self.auto_slice:
+            buffer = []
+            dtype = self.flatten_config["dtype"]
+            row, col, remainder = self.auto_slice
+            slide_len = [col] * row
+            if remainder:
+                slide_len.append(remainder)
+            for l, p, e, length in zip(len_arr, pos_arr, elem_arr, slide_len):
+                arr_configs = dict(shape=length, dtype=dtype)
+                buffer.append(self.decompress(l, p, e, arr_configs=arr_configs, **self.decompression_kwargs))
+            obs = np.concatenate(buffer, dtype=dtype).reshape(self.obs_shape)
+            return th.from_numpy(obs).to(self.device, th.float32)
+        obs = self.decompress(len_arr, pos_arr, elem_arr, arr_configs=self.flatten_config,
+                              **self.decompression_kwargs).reshape(self.obs_shape)
         return th.from_numpy(obs).to(self.device, th.float32)

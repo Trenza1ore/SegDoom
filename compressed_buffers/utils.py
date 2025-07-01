@@ -1,12 +1,14 @@
+from typing import Optional
+
 import warnings
 import torch
 import numpy as np
 
 warnings.filterwarnings(action="ignore", message="The given NumPy array is not writable.*", category=UserWarning)
 
-_max_uint8 = np.iinfo(np.uint8).max
-_max_uint16 = np.iinfo(np.uint16).max
-_max_uint32 = np.iinfo(np.uint32).max
+_unsigned_int_types = [np.uint8, np.uint16, np.uint32, np.uint64, np.uint128, np.uint256]
+_signed_int_types =[np.int8, np.int16, np.int32, np.int64, np.int128, np.int256]
+_max_val_lookup = {dtype: np.iinfo(dtype).max for dtype in (_unsigned_int_types + _signed_int_types)}
 
 def rle_compress(arr: np.ndarray, len_type: np.dtype = np.uint16, pos_type: np.dtype = np.uint16,
                  elem_type: np.dtype = np.uint8) -> tuple[bytes, bytes, bytes]:
@@ -68,14 +70,26 @@ def rle_decompress_t(length_tensor: torch.Tensor, pos_tensor: torch.Tensor, elem
 
 def _downcast_unsigned(arr: np.ndarray) -> np.ndarray:
     max_val = arr.max()
-    if max_val <= _max_uint8:
-        return arr.astype(np.uint8)
-    elif max_val <= _max_uint16:
-        return arr.astype(np.uint16)
-    elif max_val <= _max_uint32:
-        return arr.astype(np.uint32)
-    else:
-        return arr.astype(np.uint64)
+    for dtype in _unsigned_int_types:
+        if max_val <= _max_val_lookup[dtype]:
+            return arr.astype(dtype)
+    raise NotImplementedError(f"Unknown dtype: {arr.dtype}")
+
+def _determine_optimal_shape(arr_len: int, dtype: np.dtype = np.uint8) -> tuple[int, int, int]:
+    max_col = _max_val_lookup[dtype] - 1
+    max_row = arr_len // max_col
+    remainder = 0
+
+    # Try to pack in equal-length slices
+    if not arr_len % max_col:
+        return max_row, max_col, remainder
+    if not arr_len % max_row:
+        max_col = arr_len // max_row
+        return max_row, max_col, remainder
+
+    # Fine, guess last row is a bit shorter...
+    remainder = arr_len - (max_row * max_col)
+    return max_row, max_col, remainder
 
 if __name__ == "__main__":
     import time
