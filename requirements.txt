@@ -6,9 +6,10 @@ psutil==5.9.0
 pygame==2.6.0
 rich==13.7.1
 tqdm==4.66.4
-sb3_contrib==2.3.0
-scipy==1.13.1
 stable_baselines3==2.3.2
+sb3_contrib==2.3.0
+sb3_extra_buffers[fast]>=0.1.6
+scipy==1.13.1
 torch==2.3.1
 torchaudio==2.3.1
 torchvision==0.19.0
